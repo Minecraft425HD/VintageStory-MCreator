@@ -6,8 +6,6 @@ This is done completely automatically with the tool and you get a finished .zip 
 which you only have to put in the mod folder in vintagestory.
 
 
-Here is the translated instruction with the original formatting preserved:
-
 ---
 
 **Step 1: Install Node.js**  
