@@ -6,8 +6,20 @@ This is done completely automatically with the tool and you get a finished .zip 
 which you only have to put in the mod folder in vintagestory.
 
 
----
+Automatic Install:
+_______________________________________________________________________________________________
 
+-Download the project in ZIP format and decompress the file.
+  >Run the setup.bat in admin mode
+  >If install completed go to the new created directory on your desktop open it
+  >If opened right klick in the folder and open in terminal
+  >Type in to the terminal ´npm start´
+  >Create your Mod :)
+
+
+
+Manual Install:
+_______________________________________________________________________________________________
 **Step 1: Install Node.js**  
 - **Download:** Go to nodejs.org and download the LTS version (e.g., 20.x.x as of March 2025).  
 - **Installation:**  
