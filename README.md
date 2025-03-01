@@ -9,7 +9,7 @@ which you only have to put in the mod folder in vintagestory.
 Automatic Install:
 _______________________________________________________________________________________________
 
--Download the project in ZIP format and decompress the file.
+-**Download the project in ZIP format and decompress the file**
   >Run the setup.bat in admin mode
   >If install completed go to the new created directory on your desktop open it.
   >If opened right klick in the folder and open in terminal.
