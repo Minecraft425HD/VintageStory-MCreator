@@ -1,0 +1,21 @@
+{
+  "name": "vs-mod-creator",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "@electron/remote": "^2.1.2",
+    "adm-zip": "^0.5.10",
+    "blockly": "^10.4.3",
+    "electron": "^27.0.0"
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
