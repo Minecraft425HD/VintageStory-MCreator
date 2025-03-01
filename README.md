@@ -11,9 +11,9 @@ ________________________________________________________________________________
 
 -Download the project in ZIP format and decompress the file.
   >Run the setup.bat in admin mode
-  >If install completed go to the new created directory on your desktop open it
-  >If opened right klick in the folder and open in terminal
-  >Type in to the terminal ´npm start´
+  >If install completed go to the new created directory on your desktop open it.
+  >If opened right klick in the folder and open in terminal.
+  >Type in to the terminal ´npm start´.
   >Create your Mod :)
 
 
