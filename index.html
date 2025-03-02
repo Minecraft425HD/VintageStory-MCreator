@@ -1,27 +1,135 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vintage Story Mod-Creator</title>
     <script src="./node_modules/blockly/blockly_compressed.js"></script>
     <script src="./node_modules/blockly/blocks_compressed.js"></script>
     <script src="./node_modules/blockly/javascript_compressed.js"></script>
     <script src="./node_modules/blockly/msg/en.js"></script>
     <style>
-        #blocklyDiv { height: 600px; width: 800px; border: 1px solid #ccc; }
-        #output { margin-top: 20px; padding: 10px; border: 1px solid #ccc; white-space: pre-wrap; }
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        #texturePath { width: 300px; margin-left: 10px; }
-        #textureList { margin-top: 10px; padding: 10px; border: 1px solid #ccc; max-height: 100px; overflow-y: auto; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e272e, #3498db);
+            color: #ecf0f1;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        h1 {
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+            animation: fadeIn 1s ease-in;
+        }
+        .main-container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            gap: 20px;
+        }
+        .left-section {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .right-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        #blocklyDiv {
+            height: 600px;
+            width: 100%;
+            max-width: 800px;
+            border: 2px solid #34495e;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            background: #fff;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            background: #e74c3c;
+            border: none;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        button:hover {
+            background: #c0392b;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        #texturePath {
+            width: 300px;
+            padding: 10px;
+            border: 1px solid #34495e;
+            border-radius: 5px;
+            background: #2c3e50;
+            color: #ecf0f1;
+            margin-left: 10px;
+            outline: none;
+        }
+        #textureList {
+            padding: 15px;
+            border: 2px dashed #34495e;
+            border-radius: 10px;
+            background: rgba(44, 62, 80, 0.8);
+            max-height: 600px;
+            overflow-y: auto;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+            flex-grow: 1;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #34495e;
+            border-radius: 10px;
+            background: rgba(44, 62, 80, 0.9);
+            white-space: pre-wrap;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
     <h1>Vintage Story Mod-Creator</h1>
-    <div id="blocklyDiv"></div>
-    <button onclick="selectTexture()">Textur auswählen</button>
-    <input type="text" id="texturePath" readonly placeholder="Keine Textur ausgewählt">
-    <div id="textureList">Geladene Texturen:<br></div>
-    <button onclick="generateMod()">Mod erstellen und kompilieren</button>
-    <pre id="output"></pre>
+    <div class="main-container">
+        <div class="left-section">
+            <div id="blocklyDiv"></div>
+            <div class="controls">
+                <button onclick="selectTexture()">Textur auswählen</button>
+                <input type="text" id="texturePath" readonly placeholder="Keine Textur ausgewählt">
+                <button onclick="generateMod()">Mod erstellen & kompilieren</button>
+            </div>
+            <pre id="output"></pre>
+        </div>
+        <div class="right-section">
+            <div id="textureList">Geladene Texturen:<br></div>
+        </div>
+    </div>
 
     <script>
         const fs = require('fs');
@@ -37,20 +145,24 @@
             workspace = Blockly.inject('blocklyDiv', {
                 toolbox: `
                     <xml>
-                        <category name="Blöcke">
+                        <category name="Blöcke" colour="#2ecc71">
                             <block type="vs_new_block"></block>
                             <block type="vs_multiblock"></block>
                         </category>
-                        <category name="Rezepte">
+                        <category name="Rezepte" colour="#f1c40f">
                             <block type="vs_new_recipe"></block>
                         </category>
-                        <category name="Verhalten">
+                        <category name="Verhalten" colour="#e67e22">
                             <block type="vs_block_behavior"></block>
                             <block type="vs_block_gui_csharp"></block>
                             <block type="vs_event_handler"></block>
                         </category>
                     </xml>
-                `
+                `,
+                trashcan: true,
+                scrollbars: true,
+                zoom: { controls: true, wheel: true, startScale: 1.0 },
+                grid: { spacing: 20, length: 3, colour: '#ccc', snap: true }
             });
 
             // Erweiterter Neuer Block mit Eigenschaften
@@ -165,7 +277,6 @@
                 return JSON.stringify(json, null, 2) + '|||';
             };
 
-            // Dropdown-Optionen für Texturen
             function getTextureOptions() {
                 if (textureList.length === 0) {
                     return [["Keine Texturen geladen", "none"]];
@@ -173,7 +284,6 @@
                 return textureList.map((texture, index) => [`Textur ${index + 1}: ${path.basename(texture)}`, texture]);
             }
 
-            // Dropdown-Optionen für Drops
             function getDropOptions() {
                 return [
                     ["Sich selbst", "SELF"],
