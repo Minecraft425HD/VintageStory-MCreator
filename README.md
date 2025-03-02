@@ -9,7 +9,7 @@ If you love my work and want more features?
 Donate me :)
 https://www.patreon.com/posts/123403572?pr=true
 
-Automatic Install:
+Automatic Install (Recommended):
 _______________________________________________________________________________________________
 
 -**Download the project in ZIP format and decompress the file**
