@@ -136,6 +136,7 @@
         const path = require('path');
         const { ipcRenderer } = require('electron');
         const AdmZip = require('adm-zip');
+        const { execSync } = require('child_process');
 
         let selectedTexturePath = null;
         let textureList = [];
@@ -238,12 +239,13 @@
                 var drop = block.getFieldValue('DROP');
                 var json = {
                     "code": "mymod2:" + name,
-                    "class": "Block",
+                    "class": "MyMod2.Block" + name.charAt(0).toUpperCase() + name.slice(1), // Benutzerdefinierte Klasse
                     "drawtype": "Cube",
                     "resistance": parseFloat(resistance),
                     "lightAbsorption": parseInt(lightAbsorption),
                     "walkable": walkable,
-                    "creativeinventory": { "general": ["*"] }
+                    "creativeinventory": { "general": ["*"] },
+                    "behaviors": [] // Platzhalter für Verhaltensweisen
                 };
                 if (collisionType === 'FULL') {
                     json.collisionSelectionBoxes = [{ "x1": 0, "y1": 0, "z1": 0, "x2": 1, "y2": 1, "z2": 1 }];
@@ -251,7 +253,7 @@
                     json.collisionSelectionBoxes = [];
                 }
                 json.drops = [{
-                    "type": "item",
+                    "type": "block",
                     "code": drop === "SELF" ? "mymod2:" + name : drop,
                     "quantity": { "avg": 1, "var": 0 }
                 }];
@@ -274,7 +276,21 @@
                         "west": { "base": west }
                     };
                 }
-                return JSON.stringify(json, null, 2) + '|||';
+
+                // Generiere die benutzerdefinierte Block-Klasse
+                var csharp = `
+using Vintagestory.API.Common;
+
+namespace MyMod2 {
+    public class Block${name.charAt(0).toUpperCase() + name.slice(1)} : Block {
+        public override void OnLoaded(ICoreAPI api) {
+            base.OnLoaded(api);
+            api.Logger.Notification("Block${name.charAt(0).toUpperCase() + name.slice(1)} loaded successfully!");
+        }
+    }
+}
+`;
+                return JSON.stringify(json, null, 2) + '|||csharp:' + name + ':' + csharp + '|||';
             };
 
             function getTextureOptions() {
@@ -371,17 +387,29 @@
             Blockly.JavaScript['vs_block_behavior'] = function(block) {
                 var blockName = block.getFieldValue('BLOCKNAME');
                 var action = block.getFieldValue('ACTION');
+                var behaviorJson = {
+                    "name": "MyMod2.Behavior" + blockName // Vollständiger Namespace
+                };
                 var csharp = `
-using VintagesStory.API.Common;
-using VintagesStory.API.Server;
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+using Vintagestory.API.Client;
 
 namespace MyMod2 {
     public class Behavior${blockName} : BlockBehavior {
-        public Behavior${blockName}(Block block) : base(block) {}
+        public Behavior${blockName}(Block block) : base(block) {
+        }
+
         public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel, ref EnumHandling handling) {
+            // Debugging auf Client und Server
+            if (world.Side == EnumAppSide.Client) {
+                ICoreClientAPI capi = world.Api as ICoreClientAPI;
+                capi.ShowChatMessage("Client: Interaktion mit ${blockName}!");
+            }
             if (world.Side == EnumAppSide.Server) {
-                ICoreServerAPI api = (world.Api as ICoreServerAPI);
-                api.SendMessage(byPlayer, 0, "${action}", EnumChatType.Notification);
+                ICoreServerAPI sapi = world.Api as ICoreServerAPI;
+                sapi.SendMessage(byPlayer, 0, "${action}", EnumChatType.Notification);
+                world.Logger.Notification("Behavior${blockName} triggered for block " + block.Code);
             }
             handling = EnumHandling.PreventDefault;
             return true;
@@ -389,7 +417,7 @@ namespace MyMod2 {
     }
 }
 `;
-                return 'csharp:' + blockName + ':' + csharp + '|||';
+                return `json:${JSON.stringify(behaviorJson, null, 2)}|||csharp:Behavior${blockName}:${csharp}|||`;
             };
 
             Blockly.Blocks['vs_block_gui_csharp'] = {
@@ -399,7 +427,7 @@ namespace MyMod2 {
                         .appendField(new Blockly.FieldTextInput("myguiblock"), "NAME");
                     this.appendDummyInput()
                         .appendField("Button Text")
-                        .appendField(new Blockly.FieldTextInput("Klick mich"), "BUTTON");
+                        .appendField(new Blockly.FieldTextInput("Klick mich"), "BUTTON"); // Korrigierter Teil
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
                     this.setColour(250);
@@ -410,8 +438,8 @@ namespace MyMod2 {
                 var name = block.getFieldValue('NAME');
                 var buttonText = block.getFieldValue('BUTTON');
                 var csharp = `
-using VintagesStory.API.Common;
-using VintagesStory.API.Client;
+using Vintagestory.API.Common;
+using Vintagestory.API.Client;
 
 namespace MyMod2 {
     public class Block${name} : Block {
@@ -462,7 +490,7 @@ namespace MyMod2 {
                 var blockName = block.getFieldValue('BLOCKNAME');
                 var action = block.getFieldValue('ACTION');
                 var csharp = `
-using VintagesStory.API.Common;
+using Vintagestory.API.Common;
 
 namespace MyMod2 {
     public class Event${blockName} : ModSystem {
@@ -508,24 +536,179 @@ namespace MyMod2 {
             });
         }
 
-        function generateMod() {
+        function checkPrerequisites() {
+            let outputText = '';
             try {
+                // Debugging: Zeige den aktuellen Wert von VINTAGE_STORY
+                outputText += `Aktueller Wert von VINTAGE_STORY: ${process.env.VINTAGE_STORY}\n`;
+
+                // Prüfe .NET 7.0 SDK
+                const sdkCheck = execSync('dotnet --list-sdks', { encoding: 'utf8' });
+                if (!sdkCheck.includes('7.0')) {
+                    throw new Error('.NET 7.0 SDK ist nicht installiert. Bitte installiere es von der offiziellen .NET-Website.');
+                }
+                outputText += '.NET 7.0 SDK gefunden:\n' + sdkCheck + '\n';
+
+                // Prüfe VINTAGE_STORY Umgebungsvariable
+                let vsPath = process.env.VINTAGE_STORY;
+                if (!vsPath) {
+                    throw new Error('Umgebungsvariable VINTAGE_STORY nicht gesetzt.');
+                }
+                outputText += `Normalisierter Pfad: ${vsPath}\n`;
+
+                // Normalisiere den Pfad und überprüfe die Existenz
+                vsPath = path.normalize(vsPath).replace(/\//g, '\\');
+                if (!fs.existsSync(vsPath)) {
+                    throw new Error(`Verzeichnis nicht gefunden: ${vsPath}`);
+                }
+                outputText += `Verzeichnis existiert: ${vsPath}\n`;
+
+                // Prüfe, ob die erforderlichen Dateien existieren (mit Unterverzeichnis 'bin' als Fallback)
+                let vsExe = path.join(vsPath, 'Vintagestory.exe');
+                let vsLibDll = path.join(vsPath, 'Vintagestory.dll'); // Zuerst im Hauptverzeichnis prüfen
+                let vsApiDll = path.join(vsPath, 'VintagestoryAPI.dll'); // Zuerst im Hauptverzeichnis prüfen
+
+                if (!fs.existsSync(vsExe)) {
+                    vsExe = path.join(vsPath, 'bin', 'Vintagestory.exe');
+                    if (!fs.existsSync(vsExe)) {
+                        throw new Error(`Vintagestory.exe nicht gefunden unter: ${path.join(vsPath, 'Vintagestory.exe')} oder ${vsExe}`);
+                    }
+                }
+                if (!fs.existsSync(vsLibDll)) {
+                    vsLibDll = path.join(vsPath, 'Lib', 'Vintagestory.dll'); // Dann in Lib prüfen
+                    if (!fs.existsSync(vsLibDll)) {
+                        vsLibDll = path.join(vsPath, 'bin', 'Lib', 'Vintagestory.dll'); // Fallback in bin\Lib
+                        if (!fs.existsSync(vsLibDll)) {
+                            throw new Error(`Vintagestory.dll nicht gefunden unter: ${path.join(vsPath, 'Vintagestory.dll')}, ${path.join(vsPath, 'Lib', 'Vintagestory.dll')} oder ${vsLibDll}`);
+                        }
+                    }
+                }
+                if (!fs.existsSync(vsApiDll)) {
+                    vsApiDll = path.join(vsPath, 'Lib', 'VintagestoryAPI.dll'); // Dann in Lib prüfen
+                    if (!fs.existsSync(vsApiDll)) {
+                        vsApiDll = path.join(vsPath, 'bin', 'Lib', 'VintagestoryAPI.dll'); // Fallback in bin\Lib
+                        if (!fs.existsSync(vsApiDll)) {
+                            throw new Error(`VintagestoryAPI.dll nicht gefunden unter: ${path.join(vsPath, 'VintagestoryAPI.dll')}, ${path.join(vsPath, 'Lib', 'VintagestoryAPI.dll')} oder ${vsApiDll}`);
+                        }
+                    }
+                }
+                outputText += `Vintagestory.exe gefunden: ${vsExe}\n`;
+                outputText += `Vintagestory.dll gefunden: ${vsLibDll}\n`;
+                outputText += `VintagestoryAPI.dll gefunden: ${vsApiDll}\n`;
+
+                return { success: true, message: outputText, vsPath };
+            } catch (err) {
+                return { success: false, message: `Fehler bei Voraussetzungen: ${err.message}` };
+            }
+        }
+
+        function generateModSystemCode() {
+            return `
+using Vintagestory.API.Common;
+using Vintagestory.API.Datastructures;
+
+namespace MyMod2 {
+    public class MyMod2 : ModSystem {
+        public override void StartPre(ICoreAPI api) {
+            base.StartPre(api);
+            api.Logger.Notification("MyMod2: StartPre called - Registering classes...");
+
+            // Registriere die benutzerdefinierte Block-Klasse
+            api.RegisterBlockClass("MyMod2.BlockMyblock", typeof(BlockMyblock));
+            api.Logger.Notification("MyMod2: BlockMyblock class registered!");
+
+            // Registriere das benutzerdefinierte Verhalten
+            api.RegisterBlockBehaviorClass("MyMod2.Behaviormyblock", typeof(Behaviormyblock));
+            api.Logger.Notification("MyMod2: Behaviormyblock behavior registered!");
+        }
+
+        public override void Start(ICoreAPI api) {
+            base.Start(api);
+            api.Logger.Notification("MyMod2 geladen!");
+        }
+    }
+}
+`;
+        }
+
+        function generateCsprojContent(vsPath) {
+            return `
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <AssemblyName>MyMod2</AssemblyName>
+    <OutputType>Library</OutputType>
+    <RootNamespace>MyMod2</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Nur benötigte Vintage Story Bibliotheken -->
+    <Reference Include="Vintagestory">
+      <HintPath>${path.join(vsPath, 'Vintagestory.dll')}</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="VintagestoryAPI">
+      <HintPath>${path.join(vsPath, 'VintagestoryAPI.dll')}</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Bindungsweiterleitung für System.Collections.Immutable -->
+    <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
+  </ItemGroup>
+</Project>`;
+        }
+
+        function generateMod() {
+            const logFilePath = path.join(__dirname, 'mod_creation.log');
+            // Leere die Log-Datei vor jedem neuen Durchlauf
+            fs.writeFileSync(logFilePath, '', 'utf8');
+
+            let outputText = '';
+
+            try {
+                // Debugging: Zeige das aktuelle Arbeitsverzeichnis
+                outputText += `Aktuelles Arbeitsverzeichnis: ${process.cwd()}\n`;
+
+                // Voraussetzungen prüfen
+                const prereqCheck = checkPrerequisites();
+                outputText += prereqCheck.message;
+                if (!prereqCheck.success) throw new Error(prereqCheck.message);
+                const vsPath = prereqCheck.vsPath;
+
+                // Debugging: Zeige die genauen Pfade der referenzierten DLLs
+                outputText += `Verwendete Pfade für .csproj:\n`;
+                outputText += `- Vintagestory.dll: ${path.join(vsPath, 'Vintagestory.dll')}\n`;
+                outputText += `- VintagestoryAPI.dll: ${path.join(vsPath, 'VintagestoryAPI.dll')}\n`;
+
+                // Überprüfe, ob die Dateien tatsächlich existieren
+                const vsDllPath = path.join(vsPath, 'Vintagestory.dll');
+                const vsApiDllPath = path.join(vsPath, 'VintagestoryAPI.dll');
+                outputText += `Dateiexistenz prüfen:\n`;
+                outputText += `- Vintagestory.dll existiert: ${fs.existsSync(vsDllPath)}\n`;
+                outputText += `- VintagestoryAPI.dll existiert: ${fs.existsSync(vsApiDllPath)}\n`;
+
+                // Blockly-Code generieren
                 const rawCode = Blockly.JavaScript.workspaceToCode(workspace);
-                let outputText = `Raw Code:\n${rawCode}\n\n`;
+                outputText += `Raw Code:\n${rawCode}\n\n`;
 
                 const items = rawCode.split('|||').filter(item => item.trim() !== '');
                 const tempDir = path.join(__dirname, 'temp');
                 const finalZip = new AdmZip();
                 let hasCSharp = false;
+                let behaviors = [];
 
                 if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
                 fs.mkdirSync(tempDir);
                 outputText += "Temp-Ordner erstellt.\n";
 
+                // Erstelle modinfo.json
                 const modinfo = {
                     "type": items.some(item => item.startsWith('csharp:')) ? "code" : "content",
                     "modid": "mymod2",
                     "name": "Mein Mod",
+                    "authors": ["Mod-Creator User"],
+                    "description": "Erstellt mit dem Vintage Story Mod-Creator",
                     "version": "1.0.0",
                     "dependencies": { "game": "*" }
                 };
@@ -533,8 +716,11 @@ namespace MyMod2 {
                 fs.writeFileSync(modinfoPath, JSON.stringify(modinfo, null, 2) + '\n', 'utf8');
                 outputText += `modinfo.json erstellt:\n${fs.readFileSync(modinfoPath, 'utf8')}\n`;
 
+                // Verarbeite Blockly-Items
                 items.forEach((item, index) => {
-                    if (item.startsWith('csharp:')) {
+                    if (item.startsWith('json:')) {
+                        behaviors.push(JSON.parse(item.replace('json:', '')));
+                    } else if (item.startsWith('csharp:')) {
                         hasCSharp = true;
                         const parts = item.split(':');
                         const name = parts[1];
@@ -542,24 +728,17 @@ namespace MyMod2 {
                         fs.mkdirSync(path.join(tempDir, 'src'), { recursive: true });
                         fs.writeFileSync(path.join(tempDir, 'src', `${name}.cs`), csharpCode);
                         outputText += `C#-Datei erstellt: src/${name}.cs\n`;
+                        outputText += `Inhalt von src/${name}.cs:\n${csharpCode}\n\n`;
                     } else {
                         const json = JSON.parse(item.trim());
-                        if (json.class === "Block") {
+                        if (json.class.startsWith("MyMod2.Block") || json.class === "Block") {
                             fs.mkdirSync(path.join(tempDir, 'assets/mymod2/blocktypes'), { recursive: true });
+                            // Füge Verhaltensweisen hinzu, wenn vorhanden
+                            if (behaviors.length > 0) {
+                                json.behaviors = behaviors;
+                            }
                             fs.writeFileSync(path.join(tempDir, 'assets/mymod2/blocktypes', `${json.code.split(':')[1]}.json`), JSON.stringify(json, null, 2));
                             outputText += `Block-Datei erstellt: assets/mymod2/blocktypes/${json.code.split(':')[1]}.json\n`;
-                            if (json.textures) {
-                                outputText += `Debug: Texturen - Up: ${json.textures.up.base}, Down: ${json.textures.down.base}, North: ${json.textures.north.base}, South: ${json.textures.south.base}, East: ${json.textures.east.base}, West: ${json.textures.west.base}\n`;
-                            } else {
-                                outputText += `Debug: Texture path in JSON = ${json.texture.base}\n`;
-                            }
-                            textureList.forEach(texture => {
-                                const textureDir = path.join(tempDir, 'assets/mymod2/textures/block');
-                                fs.mkdirSync(textureDir, { recursive: true });
-                                const textureFile = path.join(textureDir, path.basename(texture));
-                                fs.copyFileSync(texture, textureFile);
-                                outputText += `Textur kopiert: assets/mymod2/textures/block/${path.basename(texture)}\n`;
-                            });
                         } else if (json.ingredientPattern) {
                             fs.mkdirSync(path.join(tempDir, 'assets/mymod2/recipes'), { recursive: true });
                             fs.writeFileSync(path.join(tempDir, 'assets/mymod2/recipes', `${json.output.code.split(':')[1]}_recipe.json`), JSON.stringify(json, null, 2));
@@ -568,33 +747,47 @@ namespace MyMod2 {
                     }
                 });
 
-                if (hasCSharp) {
-                    const csprojContent = `
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>MyMod2</AssemblyName>
-    <OutputType>Library</OutputType>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="VintagesStory.API">
-      <HintPath>../lib/VintagesStoryAPI.dll</HintPath>
-    </Reference>
-    <Reference Include="VintagesStory.Common">
-      <HintPath>../lib/VintagesStory.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="src/*.cs" />
-  </ItemGroup>
-</Project>`;
-                    fs.writeFileSync(path.join(tempDir, 'mymod2.csproj'), csprojContent);
-                    outputText += "mymod2.csproj erstellt.\n";
-                    const { execSync } = require('child_process');
-                    execSync(`dotnet build ${path.join(tempDir, 'mymod2.csproj')} -o ${tempDir}`, { stdio: 'inherit' });
-                    outputText += "C#-Code kompiliert zu MyMod2.dll.\n";
+                // Texturen kopieren
+                if (textureList.length > 0) {
+                    const textureDir = path.join(tempDir, 'assets/mymod2/textures/block');
+                    fs.mkdirSync(textureDir, { recursive: true });
+                    textureList.forEach(texture => {
+                        const textureFile = path.join(textureDir, path.basename(texture));
+                        fs.copyFileSync(texture, textureFile);
+                        outputText += `Textur kopiert: assets/mymod2/textures/block/${path.basename(texture)}\n`;
+                    });
                 }
 
+                // Wenn C#-Code vorhanden ist, erstelle ModSystem und kompiliere
+                if (hasCSharp) {
+                    fs.writeFileSync(path.join(tempDir, 'src', 'Mod.cs'), generateModSystemCode());
+                    outputText += "C#-ModSystem erstellt: src/Mod.cs\n";
+                    outputText += `Inhalt von src/Mod.cs:\n${generateModSystemCode()}\n\n`;
+
+                    const csprojContent = generateCsprojContent(vsPath);
+                    fs.writeFileSync(path.join(tempDir, 'mymod2.csproj'), csprojContent);
+                    outputText += "mymod2.csproj erstellt:\n" + fs.readFileSync(path.join(tempDir, 'mymod2.csproj'), 'utf8') + "\n";
+
+                    const buildDir = path.join(tempDir, 'bin', 'Release', 'net7.0');
+                    try {
+                        const buildCommand = `dotnet build "${path.join(tempDir, 'mymod2.csproj')}" -c Release -o "${buildDir}"`;
+                        outputText += `Starte Kompilierung mit Befehl: ${buildCommand}\n`;
+                        outputText += `--------------------------------\n`;
+                        const buildOutput = execSync(buildCommand, { encoding: 'utf8' });
+                        outputText += `--------------------------------\n`;
+                        outputText += "C#-Code kompiliert zu MyMod2.dll.\n";
+                        outputText += `Build-Ausgabe:\n${buildOutput}\n`;
+                    } catch (buildError) {
+                        outputText += `--------------------------------\n`;
+                        outputText += `Kompilierungsfehler:\n`;
+                        outputText += `stdout:\n${buildError.stdout}\n`;
+                        outputText += `stderr:\n${buildError.stderr}\n`;
+                        outputText += `--------------------------------\n`;
+                        throw new Error("Kompilierung fehlgeschlagen.");
+                    }
+                }
+
+                // ZIP-Datei erstellen
                 finalZip.addLocalFile(modinfoPath);
                 outputText += "modinfo.json zur ZIP hinzugefügt.\n";
 
@@ -602,23 +795,28 @@ namespace MyMod2 {
                 if (fs.existsSync(assetsDir)) {
                     finalZip.addLocalFolder(assetsDir, 'assets');
                     outputText += "assets/ zur ZIP hinzugefügt.\n";
-                } else {
-                    outputText += "assets/ nicht gefunden.\n";
                 }
 
-                const dllPath = path.join(tempDir, 'MyMod2.dll');
+                const dllPath = path.join(tempDir, 'bin', 'Release', 'net7.0', 'MyMod2.dll');
                 if (fs.existsSync(dllPath)) {
                     finalZip.addLocalFile(dllPath);
                     outputText += "MyMod2.dll zur ZIP hinzugefügt.\n";
+                } else if (hasCSharp) {
+                    throw new Error("Kompilierung fehlgeschlagen: MyMod2.dll nicht gefunden.");
                 }
 
                 const outputZipPath = path.join(__dirname, 'mymod2.zip');
                 finalZip.writeZip(outputZipPath);
-                outputText += `Mod erstellt: ${outputZipPath}\nFüge es in %appdata%/VintagestoryData/Mods ein.`;
-                document.getElementById('output').innerText = outputText;
+                outputText += `Mod erstellt: ${outputZipPath}\nFüge es in %appdata%/VintagestoryData/Mods ein.\n`;
+                outputText += `Log-Datei ist verfügbar unter: ${logFilePath}\n`;
+
             } catch (err) {
-                document.getElementById('output').innerText = `Fehler: ${err.message}`;
+                outputText += `Fehler: ${err.message}\nStack: ${err.stack}\n`;
             } finally {
+                // Schreibe die Ausgabe in die Log-Datei
+                fs.appendFileSync(logFilePath, outputText, 'utf8');
+                document.getElementById('output').innerText = outputText;
+
                 const tempDir = path.join(__dirname, 'temp');
                 if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
             }
