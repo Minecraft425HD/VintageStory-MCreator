@@ -21,7 +21,7 @@ set /p POLICY=<temp.txt
 del temp.txt
 echo Current policy: %POLICY%
 if "%POLICY%" NEQ "RemoteSigned" (
-    echo Error: Policy could not be chanded!
+    echo Error: Policy could not be changed!
     pause
     exit /b 1
 )
@@ -52,7 +52,7 @@ echo Node.js and .NET SDK Successfully installed.
 
 :: Step 3: Create project directory
 echo Step 3: Create project directory...
-set "PROJECT_DIR=%USERPROFILE%\Desktop\VIntagestory MCreator"
+set "PROJECT_DIR=%USERPROFILE%\Desktop\VintageStoryMCreator"
 if exist "%PROJECT_DIR%" (
     echo Directory already exists, skip...
 ) else (
@@ -60,11 +60,11 @@ if exist "%PROJECT_DIR%" (
 )
 cd /d "%PROJECT_DIR%"
 
-:: Step 4: Initialize project and install dependences
-echo Step 4: Initialize project and install dependences...
-echo { "name": "vs-mod-creator", "version": "1.0.0", "main": "main.js", "scripts": { "start": "electron ." }, "dependencies": { "@electron/remote": "^2.1.2", "adm-zip": "^0.5.10", "blockly": "^10.4.3", "electron": "^27.0.0" } } > package.json
+:: Step 4: Initialize project and install dependencies
+echo Step 4: Initialize project and install dependencies...
+echo { "name": "vs-mod-creator", "version": "1.0.0", "main": "main.js", "scripts": { "start": "electron ." }, "dependencies": { "@electron/remote": "^2.1.2", "adm-zip": "^0.5.10", "blockly": "^10.4.3"[...]
 call npm install
-echo Dependences installed.
+echo Dependencies installed.
 
 :: Step 5: Copy main.js, index.html and lib
 echo Step 5: Copy main.js, index.html and lib...
@@ -89,7 +89,18 @@ copy "%SOURCE_DIR%index.html" "%PROJECT_DIR%\index.html"
 xcopy "%SOURCE_DIR%lib" "%PROJECT_DIR%\lib" /E /I /Y
 echo Files and lib folders successfully copied.
 
-:: Step 6: Ready
+:: Step 6: Set Environment Variable
+echo Step 6: Set Environment Variable...
+set "VINTAGE_STORY_PATH=%USERPROFILE%\AppData\Roaming\Vintagestory"
+setx VINTAGE_STORY "%VINTAGE_STORY_PATH%" /M
+if %errorLevel% NEQ 0 (
+    echo error: Environment Variable could not be set!
+    pause
+    exit /b 1
+)
+echo Environment Variable VINTAGE_STORY set to %VINTAGE_STORY_PATH%.
+
+:: Step 7: Ready
 echo.
 echo === Installation completed! ===
 echo The tool was installed in %PROJECT_DIR%.
