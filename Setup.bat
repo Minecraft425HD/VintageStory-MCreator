@@ -60,14 +60,8 @@ if exist "%PROJECT_DIR%" (
 )
 cd /d "%PROJECT_DIR%"
 
-:: Step 4: Initialize project and install dependencies
-echo Step 4: Initialize project and install dependencies...
-echo { "name": "vs-mod-creator", "version": "1.0.0", "main": "main.js", "scripts": { "start": "electron ." }, "dependencies": { "@electron/remote": "^2.1.2", "adm-zip": "^0.5.10", "blockly": "^10.4.3"[...]
-call npm install
-echo Dependencies installed.
-
-:: Step 5: Copy main.js, index.html and lib
-echo Step 5: Copy main.js, index.html and lib...
+:: Step 4: Copy main.js, index.html and lib
+echo Step 4: Copy main.js, index.html and lib...
 set "SOURCE_DIR=%~dp0"
 if not exist "%SOURCE_DIR%main.js" (
     echo error: main.js Not found in the download folder!
@@ -89,11 +83,17 @@ if not exist "%SOURCE_DIR%package.json" (
     pause
     exit /b 1
 )
+copy "%SOURCE_DIR%package.json" "%PROJECT_DIR%\package.json"
 copy "%SOURCE_DIR%main.js" "%PROJECT_DIR%\main.js"
 copy "%SOURCE_DIR%index.html" "%PROJECT_DIR%\index.html"
-copy "%SOURCE_DIR%package.json" "%PROJECT_DIR%\package.json"
 xcopy "%SOURCE_DIR%lib" "%PROJECT_DIR%\lib" /E /I /Y
 echo Files and lib folders successfully copied.
+
+:: Step 5: Initialize project and install dependencies
+echo Step 5: Initialize project and install dependencies...
+echo { "name": "vs-mod-creator", "version": "1.0.0", "main": "main.js", "scripts": { "start": "electron ." }, "dependencies": { "@electron/remote": "^2.1.2", "adm-zip": "^0.5.10", "blockly": "^10.4.3"[...]
+call npm install
+echo Dependencies installed.
 
 :: Step 6: Set Environment Variable
 echo Step 6: Set Environment Variable...
