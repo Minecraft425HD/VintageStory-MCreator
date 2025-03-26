@@ -10,7 +10,7 @@ Donate me :)
 https://www.patreon.com/posts/123403572?pr=true
 
 Important:
---------VINTAGESTORY has to be installed at DEFAULT directories--------
+--------VINTAGESTORY has to be installed at DEFAULT directory--------
 
 
 Automatic Install (Recommended):
