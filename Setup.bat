@@ -30,7 +30,11 @@ echo Successfully set.
 :: Step 2: Install Node.js and .NET SDK (via Winget)
 echo Step 2: Install Node.js and .NET SDK...
 winget install -e --id OpenJS.NodeJS.LTS --silent
+winget install -e --id Microsoft.DotNet.SDK.5 --silent
 winget install -e --id Microsoft.DotNet.SDK.6 --silent
+winget install -e --id Microsoft.DotNet.SDK.7 --silent
+winget install -e --id Microsoft.DotNet.SDK.8 --silent
+winget install -e --id Microsoft.DotNet.SDK.9 --silent
 echo Test installation...
 where node >nul 2>&1
 if %errorLevel% NEQ 0 (
