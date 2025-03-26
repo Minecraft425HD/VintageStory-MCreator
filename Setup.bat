@@ -84,8 +84,14 @@ if not exist "%SOURCE_DIR%lib" (
     pause
     exit /b 1
 )
+if not exist "%SOURCE_DIR%package.json" (
+    echo error: package.json Not found in the download folder!
+    pause
+    exit /b 1
+)
 copy "%SOURCE_DIR%main.js" "%PROJECT_DIR%\main.js"
 copy "%SOURCE_DIR%index.html" "%PROJECT_DIR%\index.html"
+copy "%SOURCE_DIR%package.json" "%PROJECT_DIR%\package.json"
 xcopy "%SOURCE_DIR%lib" "%PROJECT_DIR%\lib" /E /I /Y
 echo Files and lib folders successfully copied.
 
