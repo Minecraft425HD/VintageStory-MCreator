@@ -9,6 +9,10 @@ If you love my work and want more features?
 Donate me :)
 https://www.patreon.com/posts/123403572?pr=true
 
+Important:
+--------VINTAGESTORY has to be installed at DEFAULT directories--------
+
+
 Automatic Install (Recommended):
 _______________________________________________________________________________________________
 
