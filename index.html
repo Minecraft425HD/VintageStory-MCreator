@@ -602,8 +602,8 @@ namespace MyMod2 {
             }
         }
 
-        function generateModSystemCode() {
-            return `
+        function generateModSystemCode(hasBehavior) {
+            let code = `
 using Vintagestory.API.Common;
 using Vintagestory.API.Datastructures;
 
@@ -616,10 +616,17 @@ namespace MyMod2 {
             // Registriere die benutzerdefinierte Block-Klasse
             api.RegisterBlockClass("MyMod2.BlockMyblock", typeof(BlockMyblock));
             api.Logger.Notification("MyMod2: BlockMyblock class registered!");
+`;
 
+            if (hasBehavior) {
+                code += `
             // Registriere das benutzerdefinierte Verhalten
             api.RegisterBlockBehaviorClass("MyMod2.Behaviormyblock", typeof(Behaviormyblock));
             api.Logger.Notification("MyMod2: Behaviormyblock behavior registered!");
+`;
+            }
+
+            code += `
         }
 
         public override void Start(ICoreAPI api) {
@@ -629,6 +636,7 @@ namespace MyMod2 {
     }
 }
 `;
+            return code;
         }
 
         function generateCsprojContent(vsPath) {
@@ -696,6 +704,7 @@ namespace MyMod2 {
                 const tempDir = path.join(__dirname, 'temp');
                 const finalZip = new AdmZip();
                 let hasCSharp = false;
+                let hasBehavior = false; // Neue Variable, um zu prüfen, ob ein Verhalten existiert
                 let behaviors = [];
 
                 if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
@@ -715,6 +724,9 @@ namespace MyMod2 {
                 const modinfoPath = path.join(tempDir, 'modinfo.json');
                 fs.writeFileSync(modinfoPath, JSON.stringify(modinfo, null, 2) + '\n', 'utf8');
                 outputText += `modinfo.json erstellt:\n${fs.readFileSync(modinfoPath, 'utf8')}\n`;
+
+                // Prüfe, ob ein Verhalten existiert
+                hasBehavior = items.some(item => item.includes('Behaviormyblock'));
 
                 // Verarbeite Blockly-Items
                 items.forEach((item, index) => {
@@ -760,9 +772,9 @@ namespace MyMod2 {
 
                 // Wenn C#-Code vorhanden ist, erstelle ModSystem und kompiliere
                 if (hasCSharp) {
-                    fs.writeFileSync(path.join(tempDir, 'src', 'Mod.cs'), generateModSystemCode());
+                    fs.writeFileSync(path.join(tempDir, 'src', 'Mod.cs'), generateModSystemCode(hasBehavior));
                     outputText += "C#-ModSystem erstellt: src/Mod.cs\n";
-                    outputText += `Inhalt von src/Mod.cs:\n${generateModSystemCode()}\n\n`;
+                    outputText += `Inhalt von src/Mod.cs:\n${generateModSystemCode(hasBehavior)}\n\n`;
 
                     const csprojContent = generateCsprojContent(vsPath);
                     fs.writeFileSync(path.join(tempDir, 'mymod2.csproj'), csprojContent);
