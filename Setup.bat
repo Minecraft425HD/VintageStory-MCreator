@@ -83,6 +83,12 @@ if not exist "%SOURCE_DIR%package.json" (
     pause
     exit /b 1
 )
+if not exist "%SOURCE_DIR%VS-Mcreator.bat" (
+    echo error: VS-Mcreator.bat Not found in the download folder!
+    pause
+    exit /b 1
+)
+copy "%SOURCE_DIR%VS-Mcreator.bat" "%PROJECT_DIR%\VS-Mcreator.bat"
 copy "%SOURCE_DIR%package.json" "%PROJECT_DIR%\package.json"
 copy "%SOURCE_DIR%main.js" "%PROJECT_DIR%\main.js"
 copy "%SOURCE_DIR%index.html" "%PROJECT_DIR%\index.html"
