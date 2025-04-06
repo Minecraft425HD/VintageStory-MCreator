@@ -132,150 +132,150 @@
     </div>
 
     <script>
-        const fs = require('fs');
-        const path = require('path');
-        const { ipcRenderer } = require('electron');
-        const AdmZip = require('adm-zip');
-        const { execSync } = require('child_process');
+    const fs = require('fs');
+    const path = require('path');
+    const { ipcRenderer } = require('electron');
+    const AdmZip = require('adm-zip');
+    const { execSync } = require('child_process');
 
-        let selectedTexturePath = null;
-        let textureList = [];
-        let workspace = null;
+    let selectedTexturePath = null;
+    let textureList = [];
+    let workspace = null;
 
-        try {
-            workspace = Blockly.inject('blocklyDiv', {
-                toolbox: `
-                    <xml>
-                        <category name="Blöcke" colour="#2ecc71">
-                            <block type="vs_new_block"></block>
-                            <block type="vs_multiblock"></block>
-                        </category>
-                        <category name="Rezepte" colour="#f1c40f">
-                            <block type="vs_new_recipe"></block>
-                        </category>
-                        <category name="Verhalten" colour="#e67e22">
-                            <block type="vs_block_behavior"></block>
-                            <block type="vs_block_gui_csharp"></block>
-                            <block type="vs_event_handler"></block>
-                        </category>
-                    </xml>
-                `,
-                trashcan: true,
-                scrollbars: true,
-                zoom: { controls: true, wheel: true, startScale: 1.0 },
-                grid: { spacing: 20, length: 3, colour: '#ccc', snap: true }
-            });
+    try {
+        workspace = Blockly.inject('blocklyDiv', {
+            toolbox: `
+                <xml>
+                    <category name="Blöcke" colour="#2ecc71">
+                        <block type="vs_new_block"></block>
+                        <block type="vs_multiblock"></block>
+                    </category>
+                    <category name="Rezepte" colour="#f1c40f">
+                        <block type="vs_new_recipe"></block>
+                    </category>
+                    <category name="Verhalten" colour="#e67e22">
+                        <block type="vs_block_behavior"></block>
+                        <block type="vs_block_gui_csharp"></block>
+                        <block type="vs_event_handler"></block>
+                    </category>
+                </xml>
+            `,
+            trashcan: true,
+            scrollbars: true,
+            zoom: { controls: true, wheel: true, startScale: 1.0 },
+            grid: { spacing: 20, length: 3, colour: '#ccc', snap: true }
+        });
 
-            Blockly.Blocks['vs_new_block'] = {
-                init: function() {
-                    this.appendDummyInput()
-                        .appendField("Neuer Block")
-                        .appendField(new Blockly.FieldTextInput("myblock"), "NAME");
-                    this.appendDummyInput()
-                        .appendField("Texturtyp")
-                        .appendField(new Blockly.FieldDropdown([["Einheitlich", "SINGLE"], ["Sechsseitig", "SIX_SIDED"]]), "TEXTURE_TYPE");
-                    this.appendDummyInput("singleTexture")
-                        .appendField("Textur")
-                        .appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
-                    this.appendDummyInput("sixSidedTextures")
-                        .appendField("Oben")
-                        .appendField(new Blockly.FieldDropdown(getTextureOptions), "TOP");
-                    this.appendDummyInput("sixSidedTextures")
-                        .appendField("Unten")
-                        .appendField(new Blockly.FieldDropdown(getTextureOptions), "BOTTOM");
-                    this.appendDummyInput("sixSidedTextures")
-                        .appendField("Norden")
-                        .appendField(new Blockly.FieldDropdown(getTextureOptions), "NORTH");
-                    this.appendDummyInput("sixSidedTextures")
-                        .appendField("Süden")
-                        .appendField(new Blockly.FieldDropdown(getTextureOptions), "SOUTH");
-                    this.appendDummyInput("sixSidedTextures")
-                        .appendField("Osten")
-                        .appendField(new Blockly.FieldDropdown(getTextureOptions), "EAST");
-                    this.appendDummyInput("sixSidedTextures")
-                        .appendField("Westen")
-                        .appendField(new Blockly.FieldDropdown(getTextureOptions), "WEST");
-                    this.appendDummyInput()
-                        .appendField("Härte")
-                        .appendField(new Blockly.FieldNumber(5, 0, 100, 1), "RESISTANCE");
-                    this.appendDummyInput()
-                        .appendField("Lichtdurchlässigkeit")
-                        .appendField(new Blockly.FieldNumber(0, 0, 32, 1), "LIGHT_ABSORPTION");
-                    this.appendDummyInput()
-                        .appendField("Kollision")
-                        .appendField(new Blockly.FieldDropdown([["Voll", "FULL"], ["Keine", "NONE"]]), "COLLISION_TYPE");
-                    this.appendDummyInput()
-                        .appendField("Durchgang")
-                        .appendField(new Blockly.FieldCheckbox("FALSE"), "WALKABLE");
-                    this.appendDummyInput()
-                        .appendField("Drop")
-                        .appendField(new Blockly.FieldDropdown(getDropOptions), "DROP");
-                    this.setPreviousStatement(true, null);
-                    this.setNextStatement(true, null);
-                    this.setColour(120);
-                    this.setOnChange(function(changeEvent) {
-                        const textureType = this.getFieldValue('TEXTURE_TYPE');
-                        const singleInput = this.getInput('singleTexture');
-                        singleInput.setVisible(textureType === 'SINGLE');
-                        for (let i = 0; i < this.inputList.length; i++) {
-                            const input = this.inputList[i];
-                            if (input.name === 'sixSidedTextures') {
-                                input.setVisible(textureType === 'SIX_SIDED');
-                            }
+        Blockly.Blocks['vs_new_block'] = {
+            init: function() {
+                this.appendDummyInput()
+                    .appendField("Neuer Block")
+                    .appendField(new Blockly.FieldTextInput("myblock"), "NAME");
+                this.appendDummyInput()
+                    .appendField("Texturtyp")
+                    .appendField(new Blockly.FieldDropdown([["Einheitlich", "SINGLE"], ["Sechsseitig", "SIX_SIDED"]]), "TEXTURE_TYPE");
+                this.appendDummyInput("singleTexture")
+                    .appendField("Textur")
+                    .appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.appendDummyInput("sixSidedTextures")
+                    .appendField("Oben")
+                    .appendField(new Blockly.FieldDropdown(getTextureOptions), "TOP");
+                this.appendDummyInput("sixSidedTextures")
+                    .appendField("Unten")
+                    .appendField(new Blockly.FieldDropdown(getTextureOptions), "BOTTOM");
+                this.appendDummyInput("sixSidedTextures")
+                    .appendField("Norden")
+                    .appendField(new Blockly.FieldDropdown(getTextureOptions), "NORTH");
+                this.appendDummyInput("sixSidedTextures")
+                    .appendField("Süden")
+                    .appendField(new Blockly.FieldDropdown(getTextureOptions), "SOUTH");
+                this.appendDummyInput("sixSidedTextures")
+                    .appendField("Osten")
+                    .appendField(new Blockly.FieldDropdown(getTextureOptions), "EAST");
+                this.appendDummyInput("sixSidedTextures")
+                    .appendField("Westen")
+                    .appendField(new Blockly.FieldDropdown(getTextureOptions), "WEST");
+                this.appendDummyInput()
+                    .appendField("Härte")
+                    .appendField(new Blockly.FieldNumber(5, 0, 100, 1), "RESISTANCE");
+                this.appendDummyInput()
+                    .appendField("Lichtdurchlässigkeit")
+                    .appendField(new Blockly.FieldNumber(0, 0, 32, 1), "LIGHT_ABSORPTION");
+                this.appendDummyInput()
+                    .appendField("Kollision")
+                    .appendField(new Blockly.FieldDropdown([["Voll", "FULL"], ["Keine", "NONE"]]), "COLLISION_TYPE");
+                this.appendDummyInput()
+                    .appendField("Durchgang")
+                    .appendField(new Blockly.FieldCheckbox("FALSE"), "WALKABLE");
+                this.appendDummyInput()
+                    .appendField("Drop")
+                    .appendField(new Blockly.FieldDropdown(getDropOptions), "DROP");
+                this.setPreviousStatement(true, null);
+                this.setNextStatement(true, null);
+                this.setColour(120);
+                this.setOnChange(function(changeEvent) {
+                    const textureType = this.getFieldValue('TEXTURE_TYPE');
+                    const singleInput = this.getInput('singleTexture');
+                    singleInput.setVisible(textureType === 'SINGLE');
+                    for (let i = 0; i < this.inputList.length; i++) {
+                        const input = this.inputList[i];
+                        if (input.name === 'sixSidedTextures') {
+                            input.setVisible(textureType === 'SIX_SIDED');
                         }
-                        this.render();
-                    });
-                }
-            };
+                    }
+                    this.render();
+                });
+            }
+        };
 
-            Blockly.JavaScript['vs_new_block'] = function(block) {
-                var name = block.getFieldValue('NAME');
-                var textureType = block.getFieldValue('TEXTURE_TYPE');
-                var resistance = block.getFieldValue('RESISTANCE');
-                var lightAbsorption = block.getFieldValue('LIGHT_ABSORPTION');
-                var collisionType = block.getFieldValue('COLLISION_TYPE');
-                var walkable = block.getFieldValue('WALKABLE') === 'TRUE';
-                var drop = block.getFieldValue('DROP');
-                var json = {
-                    "code": "mymod2:" + name,
-                    "class": "MyMod2.Block" + name.charAt(0).toUpperCase() + name.slice(1),
-                    "drawtype": "Cube",
-                    "resistance": parseFloat(resistance),
-                    "lightAbsorption": parseInt(lightAbsorption),
-                    "walkable": walkable,
-                    "creativeinventory": { "general": ["*"] },
-                    "behaviors": []
+        Blockly.JavaScript['vs_new_block'] = function(block) {
+            var name = block.getFieldValue('NAME');
+            var textureType = block.getFieldValue('TEXTURE_TYPE');
+            var resistance = block.getFieldValue('RESISTANCE');
+            var lightAbsorption = block.getFieldValue('LIGHT_ABSORPTION');
+            var collisionType = block.getFieldValue('COLLISION_TYPE');
+            var walkable = block.getFieldValue('WALKABLE') === 'TRUE';
+            var drop = block.getFieldValue('DROP');
+            var json = {
+                "code": "mymod2:" + name,
+                "class": "MyMod2.Block" + name.charAt(0).toUpperCase() + name.slice(1),
+                "drawtype": "Cube",
+                "resistance": parseFloat(resistance),
+                "lightAbsorption": parseInt(lightAbsorption),
+                "walkable": walkable,
+                "creativeinventory": { "general": ["*"] },
+                "behaviors": []
+            };
+            if (collisionType === 'FULL') {
+                json.collisionSelectionBoxes = [{ "x1": 0, "y1": 0, "z1": 0, "x2": 1, "y2": 1, "z2": 1 }];
+            } else {
+                json.collisionSelectionBoxes = [];
+            }
+            json.drops = [{
+                "type": "block",
+                "code": drop === "SELF" ? "mymod2:" + name : drop,
+                "quantity": { "avg": 1, "var": 0 }
+            }];
+            if (textureType === 'SINGLE') {
+                var texture = block.getFieldValue('TEXTURE') !== "none" ? `block/${path.basename(block.getFieldValue('TEXTURE'), '.png')}` : "game:blocks/stone";
+                json.texture = { "base": texture };
+            } else {
+                var top = block.getFieldValue('TOP') !== "none" ? `block/${path.basename(block.getFieldValue('TOP'), '.png')}` : "game:blocks/stone";
+                var bottom = block.getFieldValue('BOTTOM') !== "none" ? `block/${path.basename(block.getFieldValue('BOTTOM'), '.png')}` : "game:blocks/stone";
+                var north = block.getFieldValue('NORTH') !== "none" ? `block/${path.basename(block.getFieldValue('NORTH'), '.png')}` : "game:blocks/stone";
+                var south = block.getFieldValue('SOUTH') !== "none" ? `block/${path.basename(block.getFieldValue('SOUTH'), '.png')}` : "game:blocks/stone";
+                var east = block.getFieldValue('EAST') !== "none" ? `block/${path.basename(block.getFieldValue('EAST'), '.png')}` : "game:blocks/stone";
+                var west = block.getFieldValue('WEST') !== "none" ? `block/${path.basename(block.getFieldValue('WEST'), '.png')}` : "game:blocks/stone";
+                json.textures = {
+                    "up": { "base": top },
+                    "down": { "base": bottom },
+                    "north": { "base": north },
+                    "south": { "base": south },
+                    "east": { "base": east },
+                    "west": { "base": west }
                 };
-                if (collisionType === 'FULL') {
-                    json.collisionSelectionBoxes = [{ "x1": 0, "y1": 0, "z1": 0, "x2": 1, "y2": 1, "z2": 1 }];
-                } else {
-                    json.collisionSelectionBoxes = [];
-                }
-                json.drops = [{
-                    "type": "block",
-                    "code": drop === "SELF" ? "mymod2:" + name : drop,
-                    "quantity": { "avg": 1, "var": 0 }
-                }];
-                if (textureType === 'SINGLE') {
-                    var texture = block.getFieldValue('TEXTURE') !== "none" ? `block/${path.basename(block.getFieldValue('TEXTURE'), '.png')}` : "game:blocks/stone";
-                    json.texture = { "base": texture };
-                } else {
-                    var top = block.getFieldValue('TOP') !== "none" ? `block/${path.basename(block.getFieldValue('TOP'), '.png')}` : "game:blocks/stone";
-                    var bottom = block.getFieldValue('BOTTOM') !== "none" ? `block/${path.basename(block.getFieldValue('BOTTOM'), '.png')}` : "game:blocks/stone";
-                    var north = block.getFieldValue('NORTH') !== "none" ? `block/${path.basename(block.getFieldValue('NORTH'), '.png')}` : "game:blocks/stone";
-                    var south = block.getFieldValue('SOUTH') !== "none" ? `block/${path.basename(block.getFieldValue('SOUTH'), '.png')}` : "game:blocks/stone";
-                    var east = block.getFieldValue('EAST') !== "none" ? `block/${path.basename(block.getFieldValue('EAST'), '.png')}` : "game:blocks/stone";
-                    var west = block.getFieldValue('WEST') !== "none" ? `block/${path.basename(block.getFieldValue('WEST'), '.png')}` : "game:blocks/stone";
-                    json.textures = {
-                        "up": { "base": top },
-                        "down": { "base": bottom },
-                        "north": { "base": north },
-                        "south": { "base": south },
-                        "east": { "base": east },
-                        "west": { "base": west }
-                    };
-                }
-                var csharp = `
+            }
+            var csharp = `
 using Vintagestory.API.Common;
 
 namespace MyMod2 {
@@ -287,114 +287,128 @@ namespace MyMod2 {
     }
 }
 `;
-                return JSON.stringify(json, null, 2) + '|||csharp:' + name + ':' + csharp + '|||';
-            };
+            return JSON.stringify(json, null, 2) + '|||csharp:' + name + ':' + csharp + '|||';
+        };
 
-            function getTextureOptions() {
-                if (textureList.length === 0) {
-                    return [["Keine Texturen geladen", "none"]];
-                }
-                return textureList.map((texture, index) => [`Textur ${index + 1}: ${path.basename(texture)}`, texture]);
+        function getTextureOptions() {
+            if (textureList.length === 0) {
+                return [["Keine Texturen geladen", "none"]];
             }
+            return textureList.map((texture, index) => [`Textur ${index + 1}: ${path.basename(texture)}`, texture]);
+        }
 
-            function getDropOptions() {
-                return [
-                    ["Sich selbst", "SELF"],
-                    ["Stein", "game:stone"],
-                    ["Holz", "game:plank-oak"]
-                ];
+        function getDropOptions() {
+            return [
+                ["Sich selbst", "SELF"],
+                ["Stein", "game:stone"],
+                ["Holz", "game:plank-oak"]
+            ];
+        }
+
+        Blockly.Blocks['vs_new_recipe'] = {
+            init: function() {
+                this.appendDummyInput()
+                    .appendField("Neues Rezept")
+                    .appendField(new Blockly.FieldTextInput("S_,H_"), "PATTERN");
+                this.appendDummyInput()
+                    .appendField("Zutat 1")
+                    .appendField(new Blockly.FieldTextInput("game:stick"), "ING1");
+                this.appendDummyInput()
+                    .appendField("Zutat 2")
+                    .appendField(new Blockly.FieldTextInput("game:plank-oak"), "ING2");
+                this.appendDummyInput()
+                    .appendField("Ergebnis")
+                    .appendField(new Blockly.FieldTextInput("mymod2:table"), "OUTPUT");
+                this.setPreviousStatement(true, null);
+                this.setNextStatement(true, null);
+                this.setColour(230);
             }
+        };
 
-            Blockly.Blocks['vs_new_recipe'] = {
-                init: function() {
-                    this.appendDummyInput()
-                        .appendField("Neues Rezept")
-                        .appendField(new Blockly.FieldTextInput("S_,H_"), "PATTERN");
-                    this.appendDummyInput()
-                        .appendField("Zutat 1")
-                        .appendField(new Blockly.FieldTextInput("game:stick"), "ING1");
-                    this.appendDummyInput()
-                        .appendField("Zutat 2")
-                        .appendField(new Blockly.FieldTextInput("game:plank-oak"), "ING2");
-                    this.appendDummyInput()
-                        .appendField("Ergebnis")
-                        .appendField(new Blockly.FieldTextInput("mymod2:table"), "OUTPUT");
-                    this.setPreviousStatement(true, null);
-                    this.setNextStatement(true, null);
-                    this.setColour(230);
+        Blockly.JavaScript['vs_new_recipe'] = function(block) {
+            var pattern = block.getFieldValue('PATTERN');
+            var ing1 = block.getFieldValue('ING1');
+            var ing2 = block.getFieldValue('ING2');
+            var output = block.getFieldValue('OUTPUT');
+            var json = {
+                "ingredientPattern": pattern,
+                "ingredients": {
+                    "S": { "type": "item", "code": ing1 },
+                    "H": { "type": "item", "code": ing2 }
+                },
+                "output": { "type": "item", "code": output }
+            };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
+
+        Blockly.Blocks['vs_multiblock'] = {
+            init: function() {
+                this.appendDummyInput()
+                    .appendField("Multiblock")
+                    .appendField(new Blockly.FieldTextInput("mymultiblock"), "NAME");
+                this.appendDummyInput()
+                    .appendField("Muster")
+                    .appendField(new Blockly.FieldTextInput("BBB,B_B"), "PATTERN");
+                this.setPreviousStatement(true, null);
+                this.setNextStatement(true, null);
+                this.setColour(160);
+            }
+        };
+
+        Blockly.JavaScript['vs_multiblock'] = function(block) {
+            var name = block.getFieldValue('NAME');
+            var pattern = block.getFieldValue('PATTERN').split(',');
+            var json = {
+                "code": "mymod2:" + name,
+                "class": "Block",
+                "shape": { "base": "game:shapes/multiblock", "pattern": pattern },
+                "blockelements": [{ "code": "game:stone" }]
+            };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
+
+        Blockly.Blocks['vs_block_behavior'] = {
+            init: function() {
+                this.appendDummyInput()
+                    .appendField("Verhalten für")
+                    .appendField(new Blockly.FieldDropdown(this.getBlockOptions.bind(this), this.validateBlockName), "BLOCKNAME");
+                this.appendDummyInput()
+                    .appendField("Aktion")
+                    .appendField(new Blockly.FieldTextInput("Nachricht anzeigen"), "ACTION");
+                this.setPreviousStatement(true, null);
+                this.setNextStatement(true, null);
+                this.setColour(200);
+            },
+            getBlockOptions: function() {
+                const blocks = workspace.getAllBlocks().filter(b => b.type === 'vs_new_block');
+                const options = blocks.map(b => {
+                    const name = b.getFieldValue('NAME');
+                    return [name, name];
+                });
+                if (options.length === 0) {
+                    return [["Kein Block definiert", "myblock"]];
                 }
-            };
+                return options;
+            },
+            validateBlockName: function(newValue) {
+                return newValue || "myblock";
+            }
+        };
 
-            Blockly.JavaScript['vs_new_recipe'] = function(block) {
-                var pattern = block.getFieldValue('PATTERN');
-                var ing1 = block.getFieldValue('ING1');
-                var ing2 = block.getFieldValue('ING2');
-                var output = block.getFieldValue('OUTPUT');
-                var json = {
-                    "ingredientPattern": pattern,
-                    "ingredients": {
-                        "S": { "type": "item", "code": ing1 },
-                        "H": { "type": "item", "code": ing2 }
-                    },
-                    "output": { "type": "item", "code": output }
-                };
-                return JSON.stringify(json, null, 2) + '|||';
+        Blockly.JavaScript['vs_block_behavior'] = function(block) {
+            var blockName = block.getFieldValue('BLOCKNAME');
+            var action = block.getFieldValue('ACTION');
+            var behaviorJson = {
+                "name": "MyMod2.Behavior" + blockName.charAt(0).toUpperCase() + blockName.slice(1)
             };
-
-            Blockly.Blocks['vs_multiblock'] = {
-                init: function() {
-                    this.appendDummyInput()
-                        .appendField("Multiblock")
-                        .appendField(new Blockly.FieldTextInput("mymultiblock"), "NAME");
-                    this.appendDummyInput()
-                        .appendField("Muster")
-                        .appendField(new Blockly.FieldTextInput("BBB,B_B"), "PATTERN");
-                    this.setPreviousStatement(true, null);
-                    this.setNextStatement(true, null);
-                    this.setColour(160);
-                }
-            };
-
-            Blockly.JavaScript['vs_multiblock'] = function(block) {
-                var name = block.getFieldValue('NAME');
-                var pattern = block.getFieldValue('PATTERN').split(',');
-                var json = {
-                    "code": "mymod2:" + name,
-                    "class": "Block",
-                    "shape": { "base": "game:shapes/multiblock", "pattern": pattern },
-                    "blockelements": [{ "code": "game:stone" }]
-                };
-                return JSON.stringify(json, null, 2) + '|||';
-            };
-
-            Blockly.Blocks['vs_block_behavior'] = {
-                init: function() {
-                    this.appendDummyInput()
-                        .appendField("Verhalten für")
-                        .appendField(new Blockly.FieldTextInput("myblock"), "BLOCKNAME");
-                    this.appendDummyInput()
-                        .appendField("Aktion")
-                        .appendField(new Blockly.FieldTextInput("Nachricht anzeigen"), "ACTION");
-                    this.setPreviousStatement(true, null);
-                    this.setNextStatement(true, null);
-                    this.setColour(200);
-                }
-            };
-
-            Blockly.JavaScript['vs_block_behavior'] = function(block) {
-                var blockName = block.getFieldValue('BLOCKNAME');
-                var action = block.getFieldValue('ACTION');
-                var behaviorJson = {
-                    "name": "MyMod2.Behavior" + blockName
-                };
-                var csharp = `
+            var csharp = `
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 using Vintagestory.API.Client;
 
 namespace MyMod2 {
-    public class Behavior${blockName} : BlockBehavior {
-        public Behavior${blockName}(Block block) : base(block) {
+    public class Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)} : BlockBehavior {
+        public Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)}(Block block) : base(block) {
         }
 
         public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel, ref EnumHandling handling) {
@@ -405,7 +419,7 @@ namespace MyMod2 {
             if (world.Side == EnumAppSide.Server) {
                 ICoreServerAPI sapi = world.Api as ICoreServerAPI;
                 sapi.SendMessage(byPlayer, 0, "${action}", EnumChatType.Notification);
-                world.Logger.Notification("Behavior${blockName} triggered for block " + block.Code);
+                world.Logger.Notification("Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)} triggered for block " + block.Code);
             }
             handling = EnumHandling.PreventDefault;
             return true;
@@ -413,27 +427,27 @@ namespace MyMod2 {
     }
 }
 `;
-                return `json:${JSON.stringify(behaviorJson, null, 2)}|||csharp:Behavior${blockName}:${csharp}|||`;
-            };
+            return `json:${JSON.stringify(behaviorJson, null, 2)}|||csharp:Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)}:${csharp}|||`;
+        };
 
-            Blockly.Blocks['vs_block_gui_csharp'] = {
-                init: function() {
-                    this.appendDummyInput()
-                        .appendField("GUI Block")
-                        .appendField(new Blockly.FieldTextInput("myguiblock"), "NAME");
-                    this.appendDummyInput()
-                        .appendField("Button Text")
-                        .appendField(new Blockly.FieldTextInput("Klick mich"), "BUTTON");
-                    this.setPreviousStatement(true, null);
-                    this.setNextStatement(true, null);
-                    this.setColour(250);
-                }
-            };
+        Blockly.Blocks['vs_block_gui_csharp'] = {
+            init: function() {
+                this.appendDummyInput()
+                    .appendField("GUI Block")
+                    .appendField(new Blockly.FieldTextInput("myguiblock"), "NAME");
+                this.appendDummyInput()
+                    .appendField("Button Text")
+                    .appendField(new Blockly.FieldTextInput("Klick mich"), "BUTTON");
+                this.setPreviousStatement(true, null);
+                this.setNextStatement(true, null);
+                this.setColour(250);
+            }
+        };
 
-            Blockly.JavaScript['vs_block_gui_csharp'] = function(block) {
-                var name = block.getFieldValue('NAME');
-                var buttonText = block.getFieldValue('BUTTON');
-                var csharp = `
+        Blockly.JavaScript['vs_block_gui_csharp'] = function(block) {
+            var name = block.getFieldValue('NAME');
+            var buttonText = block.getFieldValue('BUTTON');
+            var csharp = `
 using Vintagestory.API.Common;
 using Vintagestory.API.Client;
 
@@ -465,27 +479,27 @@ namespace MyMod2 {
     }
 }
 `;
-                return 'csharp:' + name + ':' + csharp + '|||';
-            };
+            return 'csharp:' + name + ':' + csharp + '|||';
+        };
 
-            Blockly.Blocks['vs_event_handler'] = {
-                init: function() {
-                    this.appendDummyInput()
-                        .appendField("Wenn Block platziert")
-                        .appendField(new Blockly.FieldTextInput("myblock"), "BLOCKNAME");
-                    this.appendDummyInput()
-                        .appendField("Aktion")
-                        .appendField(new Blockly.FieldTextInput("Explodiere"), "ACTION");
-                    this.setPreviousStatement(true, null);
-                    this.setNextStatement(true, null);
-                    this.setColour(180);
-                }
-            };
+        Blockly.Blocks['vs_event_handler'] = {
+            init: function() {
+                this.appendDummyInput()
+                    .appendField("Wenn Block platziert")
+                    .appendField(new Blockly.FieldTextInput("myblock"), "BLOCKNAME");
+                this.appendDummyInput()
+                    .appendField("Aktion")
+                    .appendField(new Blockly.FieldTextInput("Explodiere"), "ACTION");
+                this.setPreviousStatement(true, null);
+                this.setNextStatement(true, null);
+                this.setColour(180);
+            }
+        };
 
-            Blockly.JavaScript['vs_event_handler'] = function(block) {
-                var blockName = block.getFieldValue('BLOCKNAME');
-                var action = block.getFieldValue('ACTION');
-                var csharp = `
+        Blockly.JavaScript['vs_event_handler'] = function(block) {
+            var blockName = block.getFieldValue('BLOCKNAME');
+            var action = block.getFieldValue('ACTION');
+            var csharp = `
 using Vintagestory.API.Common;
 
 namespace MyMod2 {
@@ -501,94 +515,94 @@ namespace MyMod2 {
     }
 }
 `;
-                return 'csharp:' + blockName + ':' + csharp + '|||';
-            };
+            return 'csharp:' + blockName + ':' + csharp + '|||';
+        };
 
-            document.getElementById('output').innerText = "Blockly erfolgreich initialisiert.";
-        } catch (err) {
-            document.getElementById('output').innerText = `Fehler beim Laden von Blockly: ${err.message}`;
-        }
+        document.getElementById('output').innerText = "Blockly erfolgreich initialisiert.";
+    } catch (err) {
+        document.getElementById('output').innerText = `Fehler beim Laden von Blockly: ${err.message}`;
+    }
 
-        function selectTexture() {
-            ipcRenderer.send('select-texture');
-        }
+    function selectTexture() {
+        ipcRenderer.send('select-texture');
+    }
 
-        ipcRenderer.on('texture-selected', (event, filePath) => {
-            selectedTexturePath = filePath;
-            textureList.push(filePath);
-            updateTextureList();
-            document.getElementById('texturePath').value = filePath;
+    ipcRenderer.on('texture-selected', (event, filePath) => {
+        selectedTexturePath = filePath;
+        textureList.push(filePath);
+        updateTextureList();
+        document.getElementById('texturePath').value = filePath;
+    });
+
+    ipcRenderer.on('texture-error', (event, errorMessage) => {
+        document.getElementById('output').innerText = `Fehler bei Dateiauswahl: ${errorMessage}`;
+    });
+
+    function updateTextureList() {
+        const textureDiv = document.getElementById('textureList');
+        textureDiv.innerHTML = "Geladene Texturen:<br>";
+        textureList.forEach((texture, index) => {
+            textureDiv.innerHTML += `Textur ${index + 1}: ${path.basename(texture)}<br>`;
         });
+    }
 
-        ipcRenderer.on('texture-error', (event, errorMessage) => {
-            document.getElementById('output').innerText = `Fehler bei Dateiauswahl: ${errorMessage}`;
-        });
-
-        function updateTextureList() {
-            const textureDiv = document.getElementById('textureList');
-            textureDiv.innerHTML = "Geladene Texturen:<br>";
-            textureList.forEach((texture, index) => {
-                textureDiv.innerHTML += `Textur ${index + 1}: ${path.basename(texture)}<br>`;
-            });
-        }
-
-        function checkPrerequisites() {
-            let outputText = '';
-            try {
-                outputText += `Aktueller Wert von VINTAGE_STORY: ${process.env.VINTAGE_STORY}\n`;
-                const sdkCheck = execSync('dotnet --list-sdks', { encoding: 'utf8' });
-                if (!sdkCheck.includes('7.0')) {
-                    throw new Error('.NET 7.0 SDK ist nicht installiert. Bitte installiere es von der offiziellen .NET-Website.');
-                }
-                outputText += '.NET 7.0 SDK gefunden:\n' + sdkCheck + '\n';
-                let vsPath = process.env.VINTAGE_STORY;
-                if (!vsPath) {
-                    throw new Error('Umgebungsvariable VINTAGE_STORY nicht gesetzt.');
-                }
-                outputText += `Normalisierter Pfad: ${vsPath}\n`;
-                vsPath = path.normalize(vsPath).replace(/\//g, '\\');
-                if (!fs.existsSync(vsPath)) {
-                    throw new Error(`Verzeichnis nicht gefunden: ${vsPath}`);
-                }
-                outputText += `Verzeichnis existiert: ${vsPath}\n`;
-                let vsExe = path.join(vsPath, 'Vintagestory.exe');
-                let vsLibDll = path.join(vsPath, 'Vintagestory.dll');
-                let vsApiDll = path.join(vsPath, 'VintagestoryAPI.dll');
-                if (!fs.existsSync(vsExe)) {
-                    vsExe = path.join(vsPath, 'bin', 'Vintagestory.exe');
-                    if (!fs.existsSync(vsExe)) {
-                        throw new Error(`Vintagestory.exe nicht gefunden unter: ${path.join(vsPath, 'Vintagestory.exe')} oder ${vsExe}`);
-                    }
-                }
-                if (!fs.existsSync(vsLibDll)) {
-                    vsLibDll = path.join(vsPath, 'Lib', 'Vintagestory.dll');
-                    if (!fs.existsSync(vsLibDll)) {
-                        vsLibDll = path.join(vsPath, 'bin', 'Lib', 'Vintagestory.dll');
-                        if (!fs.existsSync(vsLibDll)) {
-                            throw new Error(`Vintagestory.dll nicht gefunden unter: ${path.join(vsPath, 'Vintagestory.dll')}, ${path.join(vsPath, 'Lib', 'Vintagestory.dll')} oder ${vsLibDll}`);
-                        }
-                    }
-                }
-                if (!fs.existsSync(vsApiDll)) {
-                    vsApiDll = path.join(vsPath, 'Lib', 'VintagestoryAPI.dll');
-                    if (!fs.existsSync(vsApiDll)) {
-                        vsApiDll = path.join(vsPath, 'bin', 'Lib', 'VintagestoryAPI.dll');
-                        if (!fs.existsSync(vsApiDll)) {
-                            throw new Error(`VintagestoryAPI.dll nicht gefunden unter: ${path.join(vsPath, 'VintagestoryAPI.dll')}, ${path.join(vsPath, 'Lib', 'VintagestoryAPI.dll')} oder ${vsApiDll}`);
-                        }
-                    }
-                }
-                outputText += `Vintagestory.exe gefunden: ${vsExe}\n`;
-                outputText += `Vintagestory.dll gefunden: ${vsLibDll}\n`;
-                outputText += `VintagestoryAPI.dll gefunden: ${vsApiDll}\n`;
-                return { success: true, message: outputText, vsPath };
-            } catch (err) {
-                return { success: false, message: `Fehler bei Voraussetzungen: ${err.message}` };
+    function checkPrerequisites() {
+        let outputText = '';
+        try {
+            outputText += `Aktueller Wert von VINTAGE_STORY: ${process.env.VINTAGE_STORY}\n`;
+            const sdkCheck = execSync('dotnet --list-sdks', { encoding: 'utf8' });
+            if (!sdkCheck.includes('7.0')) {
+                throw new Error('.NET 7.0 SDK ist nicht installiert. Bitte installiere es von der offiziellen .NET-Website.');
             }
+            outputText += '.NET 7.0 SDK gefunden:\n' + sdkCheck + '\n';
+            let vsPath = process.env.VINTAGE_STORY;
+            if (!vsPath) {
+                throw new Error('Umgebungsvariable VINTAGE_STORY nicht gesetzt.');
+            }
+            outputText += `Normalisierter Pfad: ${vsPath}\n`;
+            vsPath = path.normalize(vsPath).replace(/\//g, '\\');
+            if (!fs.existsSync(vsPath)) {
+                throw new Error(`Verzeichnis nicht gefunden: ${vsPath}`);
+            }
+            outputText += `Verzeichnis existiert: ${vsPath}\n`;
+            let vsExe = path.join(vsPath, 'Vintagestory.exe');
+            let vsLibDll = path.join(vsPath, 'Vintagestory.dll');
+            let vsApiDll = path.join(vsPath, 'VintagestoryAPI.dll');
+            if (!fs.existsSync(vsExe)) {
+                vsExe = path.join(vsPath, 'bin', 'Vintagestory.exe');
+                if (!fs.existsSync(vsExe)) {
+                    throw new Error(`Vintagestory.exe nicht gefunden unter: ${path.join(vsPath, 'Vintagestory.exe')} oder ${vsExe}`);
+                }
+            }
+            if (!fs.existsSync(vsLibDll)) {
+                vsLibDll = path.join(vsPath, 'Lib', 'Vintagestory.dll');
+                if (!fs.existsSync(vsLibDll)) {
+                    vsLibDll = path.join(vsPath, 'bin', 'Lib', 'Vintagestory.dll');
+                    if (!fs.existsSync(vsLibDll)) {
+                        throw new Error(`Vintagestory.dll nicht gefunden unter: ${path.join(vsPath, 'Vintagestory.dll')}, ${path.join(vsPath, 'Lib', 'Vintagestory.dll')} oder ${vsLibDll}`);
+                    }
+                }
+            }
+            if (!fs.existsSync(vsApiDll)) {
+                vsApiDll = path.join(vsPath, 'Lib', 'VintagestoryAPI.dll');
+                if (!fs.existsSync(vsApiDll)) {
+                    vsApiDll = path.join(vsPath, 'bin', 'Lib', 'VintagestoryAPI.dll');
+                    if (!fs.existsSync(vsApiDll)) {
+                        throw new Error(`VintagestoryAPI.dll nicht gefunden unter: ${path.join(vsPath, 'VintagestoryAPI.dll')}, ${path.join(vsPath, 'Lib', 'VintagestoryAPI.dll')} oder ${vsApiDll}`);
+                    }
+                }
+            }
+            outputText += `Vintagestory.exe gefunden: ${vsExe}\n`;
+            outputText += `Vintagestory.dll gefunden: ${vsLibDll}\n`;
+            outputText += `VintagestoryAPI.dll gefunden: ${vsApiDll}\n`;
+            return { success: true, message: outputText, vsPath };
+        } catch (err) {
+            return { success: false, message: `Fehler bei Voraussetzungen: ${err.message}` };
         }
+    }
 
-        function generateModSystemCode(blockName, hasBehavior) {
-            let code = `
+    function generateModSystemCode(blockClassMap, behaviorMap) {
+    let code = `
 using Vintagestory.API.Common;
 using Vintagestory.API.Datastructures;
 
@@ -597,19 +611,28 @@ namespace MyMod2 {
         public override void StartPre(ICoreAPI api) {
             base.StartPre(api);
             api.Logger.Notification("MyMod2: StartPre called - Registering classes...");
-
-            // Registriere die benutzerdefinierte Block-Klasse
-            api.RegisterBlockClass("MyMod2.Block${blockName.charAt(0).toUpperCase() + blockName.slice(1)}", typeof(Block${blockName.charAt(0).toUpperCase() + blockName.slice(1)}));
-            api.Logger.Notification("MyMod2: Block${blockName.charAt(0).toUpperCase() + blockName.slice(1)} class registered!");
 `;
-            if (hasBehavior) {
-                code += `
+
+    // Registriere alle Blöcke
+    for (const blockName in blockClassMap) {
+        const className = blockClassMap[blockName];
+        code += `
+            // Registriere die benutzerdefinierte Block-Klasse
+            api.RegisterBlockClass("${className}", typeof(Block${blockName.charAt(0).toUpperCase() + blockName.slice(1)}));
+            api.Logger.Notification("MyMod2: ${className} class registered!");
+`;
+    }
+
+    // Registriere alle Verhalten
+    for (const blockName in behaviorMap) {
+        code += `
             // Registriere das benutzerdefinierte Verhalten
             api.RegisterBlockBehaviorClass("MyMod2.Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)}", typeof(Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)}));
             api.Logger.Notification("MyMod2: Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)} behavior registered!");
 `;
-            }
-            code += `
+    }
+
+    code += `
         }
 
         public override void Start(ICoreAPI api) {
@@ -619,11 +642,11 @@ namespace MyMod2 {
     }
 }
 `;
-            return code;
-        }
+    return code;
+}
 
-        function generateCsprojContent(vsPath) {
-            return `
+    function generateCsprojContent(vsPath) {
+        return `
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
@@ -648,14 +671,15 @@ namespace MyMod2 {
     <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
   </ItemGroup>
 </Project>`;
-        }
+    }
 
 function generateMod() {
     const logFilePath = path.join(__dirname, 'mod_creation.log');
     fs.writeFileSync(logFilePath, '', 'utf8');
 
     let outputText = '';
-    let blockName = "Myblock"; // Standardwert, falls kein Block definiert wird
+    let blockClassMap = {}; // { "blockname": "MyMod2.BlockName" }
+    let behaviorMap = {};   // { "blockname": true }
 
     try {
         outputText += `Aktuelles Arbeitsverzeichnis: ${process.cwd()}\n`;
@@ -678,12 +702,11 @@ function generateMod() {
         outputText += `Raw Code:\n${rawCode}\n\n`;
 
         const items = rawCode.split('|||').filter(item => item.trim() !== '');
-        outputText += `Items nach Split:\n${JSON.stringify(items, null, 2)}\n\n`; // Debug: Zeige alle Items
+        outputText += `Items nach Split:\n${JSON.stringify(items, null, 2)}\n\n`;
 
         const tempDir = path.join(__dirname, 'temp');
         const finalZip = new AdmZip();
         let hasCSharp = false;
-        let hasBehavior = false;
         let behaviors = [];
 
         if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
@@ -703,16 +726,17 @@ function generateMod() {
         fs.writeFileSync(modinfoPath, JSON.stringify(modinfo, null, 2) + '\n', 'utf8');
         outputText += `modinfo.json erstellt:\n${fs.readFileSync(modinfoPath, 'utf8')}\n`;
 
-        // Extrahiere den Blocknamen aus dem ersten vs_new_block
+        // Schritt 1: Extrahiere Blocknamen und speichere sie in blockClassMap
         outputText += "Starte Blockname-Extraktion...\n";
         items.forEach((item, index) => {
-            outputText += `Verarbeite Item ${index}: ${item.slice(0, 50)}...\n`; // Debug: Zeige jedes Item
+            outputText += `Verarbeite Item ${index}: ${item.slice(0, 50)}...\n`;
             if (!item.startsWith('json:') && !item.startsWith('csharp:') && item.trim()) {
                 try {
                     const json = JSON.parse(item.trim());
-                    outputText += `JSON geparst: ${JSON.stringify(json, null, 2)}\n`; // Debug: Zeige das JSON
-                    if (json.class && json.class.startsWith("MyMod2.Block") && json.class.split('.').length === 2) { // Änderung hier: length === 2
-                        blockName = json.class.split('.')[1].substring(5).toLowerCase(); // Änderung hier: split('.')[1]
+                    outputText += `JSON geparst: ${JSON.stringify(json, null, 2)}\n`;
+                    if (json.class && json.class.startsWith("MyMod2.Block") && json.class.split('.').length === 2) {
+                        const blockName = json.class.split('.')[1].substring(5).toLowerCase();
+                        blockClassMap[blockName] = json.class;
                         outputText += `Blockname extrahiert: ${blockName}\n`;
                     } else {
                         outputText += "Keine gültige Block-Klasse gefunden.\n";
@@ -722,14 +746,26 @@ function generateMod() {
                 }
             }
         });
-        outputText += `Finaler blockName: ${blockName}\n`; // Debug: Zeige den finalen blockName
 
-        hasBehavior = items.some(item => item.includes(`Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)}`));
-        outputText += `Hat Verhalten: ${hasBehavior}\n`;
-
+        // Schritt 2: Sammle Verhalten und weise sie Blöcken zu
         items.forEach((item, index) => {
             if (item.startsWith('json:')) {
-                behaviors.push(JSON.parse(item.replace('json:', '')));
+                const behaviorJson = JSON.parse(item.replace('json:', ''));
+                const behaviorName = behaviorJson.name.split('.').pop().substring(8).toLowerCase();
+                if (blockClassMap[behaviorName]) {
+                    behaviors.push(behaviorJson);
+                    behaviorMap[behaviorName] = true;
+                    outputText += `Verhalten ${behaviorName} wird Block ${behaviorName} zugewiesen.\n`;
+                } else {
+                    outputText += `Verhalten ${behaviorName} hat keinen passenden Block und wird ignoriert.\n`;
+                }
+            }
+        });
+
+        // Schritt 3: Verarbeite Blöcke, Rezepte und C#-Dateien
+        items.forEach((item, index) => {
+            if (item.startsWith('json:')) {
+                // Bereits in Schritt 2 verarbeitet
             } else if (item.startsWith('csharp:')) {
                 hasCSharp = true;
                 const parts = item.split(':');
@@ -743,10 +779,22 @@ function generateMod() {
                 const json = JSON.parse(item.trim());
                 if (json.class && (json.class.startsWith("MyMod2.Block") || json.class === "Block")) {
                     fs.mkdirSync(path.join(tempDir, 'assets/mymod2/blocktypes'), { recursive: true });
+                    const blockNameFromClass = json.class.split('.')[1].substring(5).toLowerCase();
+                    
+                    // Zuweisung des Verhaltens mit Debugging
                     if (behaviors.length > 0) {
-                        json.behaviors = behaviors;
+                        outputText += `Prüfe Verhalten für Block ${blockNameFromClass}:\n`;
+                        outputText += `Verfügbare Verhalten: ${JSON.stringify(behaviors, null, 2)}\n`;
+                        json.behaviors = behaviors.filter(b => {
+                            const behaviorBlockName = b.name.split('.').pop().substring(8).toLowerCase();
+                            outputText += `Vergleiche: ${behaviorBlockName} mit ${blockNameFromClass}\n`;
+                            return behaviorBlockName === blockNameFromClass;
+                        });
+                        outputText += `Zugewiesene Verhalten: ${JSON.stringify(json.behaviors, null, 2)}\n`;
                     }
-                    fs.writeFileSync(path.join(tempDir, 'assets/mymod2/blocktypes', `${json.code.split(':')[1]}.json`), JSON.stringify(json, null, 2));
+
+                    const blockFilePath = path.join(tempDir, 'assets/mymod2/blocktypes', `${json.code.split(':')[1]}.json`);
+                    fs.writeFileSync(blockFilePath, JSON.stringify(json, null, 2));
                     outputText += `Block-Datei erstellt: assets/mymod2/blocktypes/${json.code.split(':')[1]}.json\n`;
                 } else if (json.ingredientPattern) {
                     fs.mkdirSync(path.join(tempDir, 'assets/mymod2/recipes'), { recursive: true });
@@ -756,6 +804,7 @@ function generateMod() {
             }
         });
 
+        // Schritt 4: Kopiere Texturen
         if (textureList.length > 0) {
             const textureDir = path.join(tempDir, 'assets/mymod2/textures/block');
             fs.mkdirSync(textureDir, { recursive: true });
@@ -766,8 +815,9 @@ function generateMod() {
             });
         }
 
+        // Schritt 5: Erstelle ModSystem und kompiliere
         if (hasCSharp) {
-            const modSystemCode = generateModSystemCode(blockName, hasBehavior);
+            const modSystemCode = generateModSystemCode(blockClassMap, behaviorMap);
             fs.writeFileSync(path.join(tempDir, 'src', 'Mod.cs'), modSystemCode);
             outputText += "C#-ModSystem erstellt: src/Mod.cs\n";
             outputText += `Inhalt von src/Mod.cs:\n${modSystemCode}\n\n`;
@@ -778,7 +828,7 @@ function generateMod() {
 
             const buildDir = path.join(tempDir, 'bin', 'Release', 'net7.0');
             try {
-                const buildCommand = `dotnet build "${path.join(tempDir, 'mymod2.csproj')}" -c Release -o "${buildDir}"`;
+                const buildCommand = `dotnet build "${path.join(tempDir, 'mymod2.csproj')}" -c Release -o "${buildDir}" -v normal`;
                 outputText += `Starte Kompilierung mit Befehl: ${buildCommand}\n`;
                 outputText += `--------------------------------\n`;
                 const buildOutput = execSync(buildCommand, { encoding: 'utf8' });
@@ -795,6 +845,7 @@ function generateMod() {
             }
         }
 
+        // Schritt 6: Erstelle ZIP-Datei
         finalZip.addLocalFile(modinfoPath);
         outputText += "modinfo.json zur ZIP hinzugefügt.\n";
 
@@ -822,11 +873,10 @@ function generateMod() {
     } finally {
         fs.appendFileSync(logFilePath, outputText, 'utf8');
         document.getElementById('output').innerText = outputText;
-
         const tempDir = path.join(__dirname, 'temp');
         if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
     }
 }
-    </script>
+</script>
 </body>
 </html>
