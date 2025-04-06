@@ -135,6 +135,8 @@
     const fs = require('fs');
     const path = require('path');
     const { ipcRenderer } = require('electron');
+    const remote = require('@electron/remote'); // Hinzugefügt für remote
+    const dialog = remote.dialog; // Verwende remote.dialog statt direkt dialog
     const AdmZip = require('adm-zip');
     const { execSync } = require('child_process');
 
@@ -602,7 +604,7 @@ namespace MyMod2 {
     }
 
     function generateModSystemCode(blockClassMap, behaviorMap) {
-    let code = `
+        let code = `
 using Vintagestory.API.Common;
 using Vintagestory.API.Datastructures;
 
@@ -613,26 +615,24 @@ namespace MyMod2 {
             api.Logger.Notification("MyMod2: StartPre called - Registering classes...");
 `;
 
-    // Registriere alle Blöcke
-    for (const blockName in blockClassMap) {
-        const className = blockClassMap[blockName];
-        code += `
+        for (const blockName in blockClassMap) {
+            const className = blockClassMap[blockName];
+            code += `
             // Registriere die benutzerdefinierte Block-Klasse
             api.RegisterBlockClass("${className}", typeof(Block${blockName.charAt(0).toUpperCase() + blockName.slice(1)}));
             api.Logger.Notification("MyMod2: ${className} class registered!");
 `;
-    }
+        }
 
-    // Registriere alle Verhalten
-    for (const blockName in behaviorMap) {
-        code += `
+        for (const blockName in behaviorMap) {
+            code += `
             // Registriere das benutzerdefinierte Verhalten
             api.RegisterBlockBehaviorClass("MyMod2.Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)}", typeof(Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)}));
             api.Logger.Notification("MyMod2: Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)} behavior registered!");
 `;
-    }
+        }
 
-    code += `
+        code += `
         }
 
         public override void Start(ICoreAPI api) {
@@ -642,8 +642,8 @@ namespace MyMod2 {
     }
 }
 `;
-    return code;
-}
+        return code;
+    }
 
     function generateCsprojContent(vsPath) {
         return `
@@ -668,215 +668,238 @@ namespace MyMod2 {
   </ItemGroup>
   <ItemGroup>
     <!-- Bindungsweiterleitung für System.Collections.Immutable -->
-    <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="8.	0.0" />
   </ItemGroup>
 </Project>`;
     }
 
-function generateMod() {
-    const logFilePath = path.join(__dirname, 'mod_creation.log');
-    fs.writeFileSync(logFilePath, '', 'utf8');
+    function generateMod() {
+        const logFilePath = path.join(__dirname, 'mod_creation.log');
+        fs.writeFileSync(logFilePath, '', 'utf8');
 
-    let outputText = '';
-    let blockClassMap = {}; // { "blockname": "MyMod2.BlockName" }
-    let behaviorMap = {};   // { "blockname": true }
+        let outputText = '';
+        let blockClassMap = {};
+        let behaviorMap = {};
 
-    try {
-        outputText += `Aktuelles Arbeitsverzeichnis: ${process.cwd()}\n`;
-        const prereqCheck = checkPrerequisites();
-        outputText += prereqCheck.message;
-        if (!prereqCheck.success) throw new Error(prereqCheck.message);
-        const vsPath = prereqCheck.vsPath;
+        try {
+            outputText += `Aktuelles Arbeitsverzeichnis: ${process.cwd()}\n`;
+            const prereqCheck = checkPrerequisites();
+            outputText += prereqCheck.message;
+            if (!prereqCheck.success) throw new Error(prereqCheck.message);
+            const vsPath = prereqCheck.vsPath;
 
-        outputText += `Verwendete Pfade für .csproj:\n`;
-        outputText += `- Vintagestory.dll: ${path.join(vsPath, 'Vintagestory.dll')}\n`;
-        outputText += `- VintagestoryAPI.dll: ${path.join(vsPath, 'VintagestoryAPI.dll')}\n`;
+            outputText += `Verwendete Pfade für .csproj:\n`;
+            outputText += `- Vintagestory.dll: ${path.join(vsPath, 'Vintagestory.dll')}\n`;
+            outputText += `- VintagestoryAPI.dll: ${path.join(vsPath, 'VintagestoryAPI.dll')}\n`;
 
-        const vsDllPath = path.join(vsPath, 'Vintagestory.dll');
-        const vsApiDllPath = path.join(vsPath, 'VintagestoryAPI.dll');
-        outputText += `Dateiexistenz prüfen:\n`;
-        outputText += `- Vintagestory.dll existiert: ${fs.existsSync(vsDllPath)}\n`;
-        outputText += `- VintagestoryAPI.dll existiert: ${fs.existsSync(vsApiDllPath)}\n`;
+            const vsDllPath = path.join(vsPath, 'Vintagestory.dll');
+            const vsApiDllPath = path.join(vsPath, 'VintagestoryAPI.dll');
+            outputText += `Dateiexistenz prüfen:\n`;
+            outputText += `- Vintagestory.dll existiert: ${fs.existsSync(vsDllPath)}\n`;
+            outputText += `- VintagestoryAPI.dll existiert: ${fs.existsSync(vsApiDllPath)}\n`;
 
-        const rawCode = Blockly.JavaScript.workspaceToCode(workspace);
-        outputText += `Raw Code:\n${rawCode}\n\n`;
+            const rawCode = Blockly.JavaScript.workspaceToCode(workspace);
+            outputText += `Raw Code:\n${rawCode}\n\n`;
 
-        const items = rawCode.split('|||').filter(item => item.trim() !== '');
-        outputText += `Items nach Split:\n${JSON.stringify(items, null, 2)}\n\n`;
+            const items = rawCode.split('|||').filter(item => item.trim() !== '');
+            outputText += `Items nach Split:\n${JSON.stringify(items, null, 2)}\n\n`;
 
-        const tempDir = path.join(__dirname, 'temp');
-        const finalZip = new AdmZip();
-        let hasCSharp = false;
-        let behaviors = [];
+            const tempDir = path.join(__dirname, 'temp');
+            const finalZip = new AdmZip();
+            let hasCSharp = false;
+            let behaviors = [];
 
-        if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
-        fs.mkdirSync(tempDir);
-        outputText += "Temp-Ordner erstellt.\n";
+            if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
+            fs.mkdirSync(tempDir);
+            outputText += "Temp-Ordner erstellt.\n";
 
-        const modinfo = {
-            "type": items.some(item => item.startsWith('csharp:')) ? "code" : "content",
-            "modid": "mymod2",
-            "name": "Mein Mod",
-            "authors": ["Mod-Creator User"],
-            "description": "Erstellt mit dem Vintage Story Mod-Creator",
-            "version": "1.0.0",
-            "dependencies": { "game": "*" }
-        };
-        const modinfoPath = path.join(tempDir, 'modinfo.json');
-        fs.writeFileSync(modinfoPath, JSON.stringify(modinfo, null, 2) + '\n', 'utf8');
-        outputText += `modinfo.json erstellt:\n${fs.readFileSync(modinfoPath, 'utf8')}\n`;
+            const modinfo = {
+                "type": items.some(item => item.startsWith('csharp:')) ? "code" : "content",
+                "modid": "mymod2",
+                "name": "Mein Mod",
+                "authors": ["Mod-Creator User"],
+                "description": "Erstellt mit dem Vintage Story Mod-Creator",
+                "version": "1.0.0",
+                "dependencies": { "game": "*" }
+            };
+            const modinfoPath = path.join(tempDir, 'modinfo.json');
+            fs.writeFileSync(modinfoPath, JSON.stringify(modinfo, null, 2) + '\n', 'utf8');
+            outputText += `modinfo.json erstellt:\n${fs.readFileSync(modinfoPath, 'utf8')}\n`;
 
-        // Schritt 1: Extrahiere Blocknamen und speichere sie in blockClassMap
-        outputText += "Starte Blockname-Extraktion...\n";
-        items.forEach((item, index) => {
-            outputText += `Verarbeite Item ${index}: ${item.slice(0, 50)}...\n`;
-            if (!item.startsWith('json:') && !item.startsWith('csharp:') && item.trim()) {
-                try {
-                    const json = JSON.parse(item.trim());
-                    outputText += `JSON geparst: ${JSON.stringify(json, null, 2)}\n`;
-                    if (json.class && json.class.startsWith("MyMod2.Block") && json.class.split('.').length === 2) {
-                        const blockName = json.class.split('.')[1].substring(5).toLowerCase();
-                        blockClassMap[blockName] = json.class;
-                        outputText += `Blockname extrahiert: ${blockName}\n`;
-                    } else {
-                        outputText += "Keine gültige Block-Klasse gefunden.\n";
+            outputText += "Starte Blockname-Extraktion...\n";
+            items.forEach((item, index) => {
+                outputText += `Verarbeite Item ${index}: ${item.slice(0, 50)}...\n`;
+                if (!item.startsWith('json:') && !item.startsWith('csharp:') && item.trim()) {
+                    try {
+                        const json = JSON.parse(item.trim());
+                        outputText += `JSON geparst: ${JSON.stringify(json, null, 2)}\n`;
+                        if (json.class && json.class.startsWith("MyMod2.Block") && json.class.split('.').length === 2) {
+                            const blockName = json.class.split('.')[1].substring(5).toLowerCase();
+                            blockClassMap[blockName] = json.class;
+                            outputText += `Blockname extrahiert: ${blockName}\n`;
+                        } else {
+                            outputText += "Keine gültige Block-Klasse gefunden.\n";
+                        }
+                    } catch (e) {
+                        outputText += `Warnung: Ungültiges JSON-Element übersprungen: ${e.message}\n`;
                     }
-                } catch (e) {
-                    outputText += `Warnung: Ungültiges JSON-Element übersprungen: ${e.message}\n`;
                 }
-            }
-        });
-
-        // Schritt 2: Sammle Verhalten und weise sie Blöcken zu
-        items.forEach((item, index) => {
-            if (item.startsWith('json:')) {
-                const behaviorJson = JSON.parse(item.replace('json:', ''));
-                const behaviorName = behaviorJson.name.split('.').pop().substring(8).toLowerCase();
-                if (blockClassMap[behaviorName]) {
-                    behaviors.push(behaviorJson);
-                    behaviorMap[behaviorName] = true;
-                    outputText += `Verhalten ${behaviorName} wird Block ${behaviorName} zugewiesen.\n`;
-                } else {
-                    outputText += `Verhalten ${behaviorName} hat keinen passenden Block und wird ignoriert.\n`;
-                }
-            }
-        });
-
-        // Schritt 3: Verarbeite Blöcke, Rezepte und C#-Dateien
-        items.forEach((item, index) => {
-            if (item.startsWith('json:')) {
-                // Bereits in Schritt 2 verarbeitet
-            } else if (item.startsWith('csharp:')) {
-                hasCSharp = true;
-                const parts = item.split(':');
-                const name = parts[1];
-                const csharpCode = parts.slice(2).join(':').trim();
-                fs.mkdirSync(path.join(tempDir, 'src'), { recursive: true });
-                fs.writeFileSync(path.join(tempDir, 'src', `${name}.cs`), csharpCode);
-                outputText += `C#-Datei erstellt: src/${name}.cs\n`;
-                outputText += `Inhalt von src/${name}.cs:\n${csharpCode}\n\n`;
-            } else {
-                const json = JSON.parse(item.trim());
-                if (json.class && (json.class.startsWith("MyMod2.Block") || json.class === "Block")) {
-                    fs.mkdirSync(path.join(tempDir, 'assets/mymod2/blocktypes'), { recursive: true });
-                    const blockNameFromClass = json.class.split('.')[1].substring(5).toLowerCase();
-                    
-                    // Zuweisung des Verhaltens mit Debugging
-                    if (behaviors.length > 0) {
-                        outputText += `Prüfe Verhalten für Block ${blockNameFromClass}:\n`;
-                        outputText += `Verfügbare Verhalten: ${JSON.stringify(behaviors, null, 2)}\n`;
-                        json.behaviors = behaviors.filter(b => {
-                            const behaviorBlockName = b.name.split('.').pop().substring(8).toLowerCase();
-                            outputText += `Vergleiche: ${behaviorBlockName} mit ${blockNameFromClass}\n`;
-                            return behaviorBlockName === blockNameFromClass;
-                        });
-                        outputText += `Zugewiesene Verhalten: ${JSON.stringify(json.behaviors, null, 2)}\n`;
-                    }
-
-                    const blockFilePath = path.join(tempDir, 'assets/mymod2/blocktypes', `${json.code.split(':')[1]}.json`);
-                    fs.writeFileSync(blockFilePath, JSON.stringify(json, null, 2));
-                    outputText += `Block-Datei erstellt: assets/mymod2/blocktypes/${json.code.split(':')[1]}.json\n`;
-                } else if (json.ingredientPattern) {
-                    fs.mkdirSync(path.join(tempDir, 'assets/mymod2/recipes'), { recursive: true });
-                    fs.writeFileSync(path.join(tempDir, 'assets/mymod2/recipes', `${json.output.code.split(':')[1]}_recipe.json`), JSON.stringify(json, null, 2));
-                    outputText += `Rezept-Datei erstellt: assets/mymod2/recipes/${json.output.code.split(':')[1]}_recipe.json\n`;
-                }
-            }
-        });
-
-        // Schritt 4: Kopiere Texturen
-        if (textureList.length > 0) {
-            const textureDir = path.join(tempDir, 'assets/mymod2/textures/block');
-            fs.mkdirSync(textureDir, { recursive: true });
-            textureList.forEach(texture => {
-                const textureFile = path.join(textureDir, path.basename(texture));
-                fs.copyFileSync(texture, textureFile);
-                outputText += `Textur kopiert: assets/mymod2/textures/block/${path.basename(texture)}\n`;
             });
-        }
 
-        // Schritt 5: Erstelle ModSystem und kompiliere
-        if (hasCSharp) {
-            const modSystemCode = generateModSystemCode(blockClassMap, behaviorMap);
-            fs.writeFileSync(path.join(tempDir, 'src', 'Mod.cs'), modSystemCode);
-            outputText += "C#-ModSystem erstellt: src/Mod.cs\n";
-            outputText += `Inhalt von src/Mod.cs:\n${modSystemCode}\n\n`;
+            items.forEach((item, index) => {
+                if (item.startsWith('json:')) {
+                    const behaviorJson = JSON.parse(item.replace('json:', ''));
+                    const behaviorName = behaviorJson.name.split('.').pop().substring(8).toLowerCase();
+                    if (blockClassMap[behaviorName]) {
+                        behaviors.push(behaviorJson);
+                        behaviorMap[behaviorName] = true;
+                        outputText += `Verhalten ${behaviorName} wird Block ${behaviorName} zugewiesen.\n`;
+                    } else {
+                        outputText += `Verhalten ${behaviorName} hat keinen passenden Block und wird ignoriert.\n`;
+                    }
+                }
+            });
 
-            const csprojContent = generateCsprojContent(vsPath);
-            fs.writeFileSync(path.join(tempDir, 'mymod2.csproj'), csprojContent);
-            outputText += "mymod2.csproj erstellt:\n" + fs.readFileSync(path.join(tempDir, 'mymod2.csproj'), 'utf8') + "\n";
+            items.forEach((item, index) => {
+                if (item.startsWith('json:')) {
+                    // Bereits verarbeitet
+                } else if (item.startsWith('csharp:')) {
+                    hasCSharp = true;
+                    const parts = item.split(':');
+                    const name = parts[1];
+                    const csharpCode = parts.slice(2).join(':').trim();
+                    fs.mkdirSync(path.join(tempDir, 'src'), { recursive: true });
+                    fs.writeFileSync(path.join(tempDir, 'src', `${name}.cs`), csharpCode);
+                    outputText += `C#-Datei erstellt: src/${name}.cs\n`;
+                    outputText += `Inhalt von src/${name}.cs:\n${csharpCode}\n\n`;
+                } else {
+                    const json = JSON.parse(item.trim());
+                    if (json.class && (json.class.startsWith("MyMod2.Block") || json.class === "Block")) {
+                        fs.mkdirSync(path.join(tempDir, 'assets/mymod2/blocktypes'), { recursive: true });
+                        const blockNameFromClass = json.class.split('.')[1].substring(5).toLowerCase();
+                        
+                        if (behaviors.length > 0) {
+                            outputText += `Prüfe Verhalten für Block ${blockNameFromClass}:\n`;
+                            outputText += `Verfügbare Verhalten: ${JSON.stringify(behaviors, null, 2)}\n`;
+                            json.behaviors = behaviors.filter(b => {
+                                const behaviorBlockName = b.name.split('.').pop().substring(8).toLowerCase();
+                                outputText += `Vergleiche: ${behaviorBlockName} mit ${blockNameFromClass}\n`;
+                                return behaviorBlockName === blockNameFromClass;
+                            });
+                            outputText += `Zugewiesene Verhalten: ${JSON.stringify(json.behaviors, null, 2)}\n`;
+                        }
 
-            const buildDir = path.join(tempDir, 'bin', 'Release', 'net7.0');
-            try {
-                const buildCommand = `dotnet build "${path.join(tempDir, 'mymod2.csproj')}" -c Release -o "${buildDir}" -v normal`;
-                outputText += `Starte Kompilierung mit Befehl: ${buildCommand}\n`;
-                outputText += `--------------------------------\n`;
-                const buildOutput = execSync(buildCommand, { encoding: 'utf8' });
-                outputText += `--------------------------------\n`;
-                outputText += "C#-Code kompiliert zu MyMod2.dll.\n";
-                outputText += `Build-Ausgabe:\n${buildOutput}\n`;
-            } catch (buildError) {
-                outputText += `--------------------------------\n`;
-                outputText += `Kompilierungsfehler:\n`;
-                outputText += `stdout:\n${buildError.stdout}\n`;
-                outputText += `stderr:\n${buildError.stderr}\n`;
-                outputText += `--------------------------------\n`;
-                throw new Error("Kompilierung fehlgeschlagen.");
+                        const blockFilePath = path.join(tempDir, 'assets/mymod2/blocktypes', `${json.code.split(':')[1]}.json`);
+                        fs.writeFileSync(blockFilePath, JSON.stringify(json, null, 2));
+                        outputText += `Block-Datei erstellt: assets/mymod2/blocktypes/${json.code.split(':')[1]}.json\n`;
+                    } else if (json.ingredientPattern) {
+                        fs.mkdirSync(path.join(tempDir, 'assets/mymod2/recipes'), { recursive: true });
+                        fs.writeFileSync(path.join(tempDir, 'assets/mymod2/recipes', `${json.output.code.split(':')[1]}_recipe.json`), JSON.stringify(json, null, 2));
+                        outputText += `Rezept-Datei erstellt: assets/mymod2/recipes/${json.output.code.split(':')[1]}_recipe.json\n`;
+                    }
+                }
+            });
+
+            if (textureList.length > 0) {
+                const textureDir = path.join(tempDir, 'assets/mymod2/textures/block');
+                fs.mkdirSync(textureDir, { recursive: true });
+                textureList.forEach(texture => {
+                    const textureFile = path.join(textureDir, path.basename(texture));
+                    fs.copyFileSync(texture, textureFile);
+                    outputText += `Textur kopiert: assets/mymod2/textures/block/${path.basename(texture)}\n`;
+                });
             }
+
+            if (hasCSharp) {
+                const modSystemCode = generateModSystemCode(blockClassMap, behaviorMap);
+                fs.writeFileSync(path.join(tempDir, 'src', 'Mod.cs'), modSystemCode);
+                outputText += "C#-ModSystem erstellt: src/Mod.cs\n";
+                outputText += `Inhalt von src/Mod.cs:\n${modSystemCode}\n\n`;
+
+                const csprojContent = generateCsprojContent(vsPath);
+                fs.writeFileSync(path.join(tempDir, 'mymod2.csproj'), csprojContent);
+                outputText += "mymod2.csproj erstellt:\n" + fs.readFileSync(path.join(tempDir, 'mymod2.csproj'), 'utf8') + "\n";
+
+                const buildDir = path.join(tempDir, 'bin', 'Release', 'net7.0');
+                try {
+                    const buildCommand = `dotnet build "${path.join(tempDir, 'mymod2.csproj')}" -c Release -o "${buildDir}" -v normal`;
+                    outputText += `Starte Kompilierung mit Befehl: ${buildCommand}\n`;
+                    outputText += `--------------------------------\n`;
+                    const buildOutput = execSync(buildCommand, { encoding: 'utf8' });
+                    outputText += `--------------------------------\n`;
+                    outputText += "C#-Code kompiliert zu MyMod2.dll.\n";
+                    outputText += `Build-Ausgabe:\n${buildOutput}\n`;
+                } catch (buildError) {
+                    outputText += `--------------------------------\n`;
+                    outputText += `Kompilierungsfehler:\n`;
+                    outputText += `stdout:\n${buildError.stdout}\n`;
+                    outputText += `stderr:\n${buildError.stderr}\n`;
+                    outputText += `--------------------------------\n`;
+                    throw new Error("Kompilierung fehlgeschlagen.");
+                }
+            }
+
+            finalZip.addLocalFile(modinfoPath);
+            outputText += "modinfo.json zur ZIP hinzugefügt.\n";
+
+            const assetsDir = path.join(tempDir, 'assets');
+            if (fs.existsSync(assetsDir)) {
+                finalZip.addLocalFolder(assetsDir, 'assets');
+                outputText += "assets/ zur ZIP hinzugefügt.\n";
+            }
+
+            const dllPath = path.join(tempDir, 'bin', 'Release', 'net7.0', 'MyMod2.dll');
+            if (fs.existsSync(dllPath)) {
+                finalZip.addLocalFile(dllPath);
+                outputText += "MyMod2.dll zur ZIP hinzugefügt.\n";
+            } else if (hasCSharp) {
+                throw new Error("Kompilierung fehlgeschlagen: MyMod2.dll nicht gefunden.");
+            }
+
+            const outputZipPath = path.join(__dirname, 'mymod2.zip');
+            finalZip.writeZip(outputZipPath);
+            outputText += `Mod erstellt: ${outputZipPath}\nFüge es in %appdata%/VintagestoryData/Mods ein.\n`;
+            outputText += `Log-Datei ist verfügbar unter: ${logFilePath}\n`;
+
+        } catch (err) {
+            outputText += `Fehler: ${err.message}\nStack: ${err.stack}\n`;
+        } finally {
+            fs.appendFileSync(logFilePath, outputText, 'utf8');
+            document.getElementById('output').innerText = outputText;
+            const tempDir = path.join(__dirname, 'temp');
+            if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
         }
-
-        // Schritt 6: Erstelle ZIP-Datei
-        finalZip.addLocalFile(modinfoPath);
-        outputText += "modinfo.json zur ZIP hinzugefügt.\n";
-
-        const assetsDir = path.join(tempDir, 'assets');
-        if (fs.existsSync(assetsDir)) {
-            finalZip.addLocalFolder(assetsDir, 'assets');
-            outputText += "assets/ zur ZIP hinzugefügt.\n";
-        }
-
-        const dllPath = path.join(tempDir, 'bin', 'Release', 'net7.0', 'MyMod2.dll');
-        if (fs.existsSync(dllPath)) {
-            finalZip.addLocalFile(dllPath);
-            outputText += "MyMod2.dll zur ZIP hinzugefügt.\n";
-        } else if (hasCSharp) {
-            throw new Error("Kompilierung fehlgeschlagen: MyMod2.dll nicht gefunden.");
-        }
-
-        const outputZipPath = path.join(__dirname, 'mymod2.zip');
-        finalZip.writeZip(outputZipPath);
-        outputText += `Mod erstellt: ${outputZipPath}\nFüge es in %appdata%/VintagestoryData/Mods ein.\n`;
-        outputText += `Log-Datei ist verfügbar unter: ${logFilePath}\n`;
-
-    } catch (err) {
-        outputText += `Fehler: ${err.message}\nStack: ${err.stack}\n`;
-    } finally {
-        fs.appendFileSync(logFilePath, outputText, 'utf8');
-        document.getElementById('output').innerText = outputText;
-        const tempDir = path.join(__dirname, 'temp');
-        if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
     }
-}
-</script>
+
+    // Empfange geladenen Workspace
+    ipcRenderer.on('load-workspace', (event, filePath) => {
+        try {
+            const workspaceData = fs.readFileSync(filePath, 'utf8');
+            Blockly.serialization.workspaces.load(JSON.parse(workspaceData), workspace);
+            document.getElementById('output').innerText = `Workspace geladen von: ${filePath}`;
+        } catch (err) {
+            document.getElementById('output').innerText = `Fehler beim Laden des Workspaces: ${err.message}`;
+        }
+    });
+
+    // Optional: Funktion zum Speichern des Workspaces
+    function saveWorkspace() {
+        const workspaceData = JSON.stringify(Blockly.serialization.workspaces.save(workspace));
+        dialog.showSaveDialog({
+            title: "Workspace speichern",
+            filters: [{ name: 'JSON Files', extensions: ['json'] }]
+        }).then(result => {
+            if (!result.canceled && result.filePath) {
+                fs.writeFileSync(result.filePath, workspaceData);
+                document.getElementById('output').innerText = `Workspace gespeichert unter: ${result.filePath}`;
+            }
+        }).catch(err => {
+            document.getElementById('output').innerText = `Fehler beim Speichern: ${err.message}`;
+        });
+    }
+
+    // Füge einen Speichern-Button zu .controls hinzu
+    document.querySelector('.controls').insertAdjacentHTML('beforeend', '<button onclick="saveWorkspace()">Workspace speichern</button>');
+    </script>
 </body>
 </html>
