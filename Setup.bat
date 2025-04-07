@@ -60,8 +60,8 @@ if exist "%PROJECT_DIR%" (
 )
 cd /d "%PROJECT_DIR%"
 
-:: Step 4: Copy main.js, index.html and lib
-echo Step 4: Copy main.js, index.html and lib...
+:: Step 4: Copy main.js, index.html, package.json, VS-Mcreator.bat, start.html and lib
+echo Step 4: Copy main.js, index.html, package.json, VS-Mcreator.bat, start.html and lib...
 set "SOURCE_DIR=%~dp0"
 if not exist "%SOURCE_DIR%main.js" (
     echo error: main.js Not found in the download folder!
