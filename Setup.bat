@@ -123,10 +123,10 @@ echo.
 echo === Installation completed! ===
 echo The tool was installed in %PROJECT_DIR%.
 echo To start it:
-echo 1. Open CMD into the Modcreator folder and navigate:
-echo    cd %PROJECT_DIR%
-echo 2. Start the Tool:
-echo    npm start
-echo 3. Test the mod in Vintage Story:
+echo 1. Go to VS Modcreator directory 
+echo 2. Execute VS-Modcreator.bat
+echo 3. Make your own VS mod and klick on compile
+echo 4. Your mod.zip is saved into the Tools folder
+echo 5. Test the mod in Vintage Story:
 echo    Copy mymod2.zip to %%appdata%%\VintagestoryData\Mods
 pause
