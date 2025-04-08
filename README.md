@@ -12,7 +12,8 @@ A VintageStory Mod Creator
   - Custom names
   - Single and multi texturing
 - Behaviors (beta)
-  - At this time only the first behavior works fine
+  - Simple behavior block
+  - Simple gui block
 - Custom recipes (beta)
 - Multiblock structures (WIP)
 - Pictures coming soon!
