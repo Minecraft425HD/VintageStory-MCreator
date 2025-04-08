@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, screen } = require('electron');
 const path = require('path');
 const remoteMain = require('@electron/remote/main');
 remoteMain.initialize();
@@ -7,9 +7,10 @@ let startWindow;
 let mainWindow;
 
 function createStartWindow() {
+    const { width, height } = screen.getPrimaryDisplay().workAreaSize; // Maximale Bildschirmgröße ohne Taskleiste
     startWindow = new BrowserWindow({
-        width: 700,
-        height: 500,
+        width: width,
+        height: height,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
@@ -17,12 +18,14 @@ function createStartWindow() {
     });
     remoteMain.enable(startWindow.webContents);
     startWindow.loadFile('start.html');
+    startWindow.maximize(); // Optional: Fenster sofort maximieren
 }
 
 function createMainWindow(config) {
+    const { width, height } = screen.getPrimaryDisplay().workAreaSize;
     mainWindow = new BrowserWindow({
-        width: 1000,
-        height: 700,
+        width: width,
+        height: height,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
@@ -31,6 +34,7 @@ function createMainWindow(config) {
     remoteMain.enable(mainWindow.webContents);
     mainWindow.loadFile('index.html');
     mainWindow.webContents.openDevTools();
+    mainWindow.maximize(); // Optional: Fenster sofort maximieren
 
     mainWindow.webContents.on('did-finish-load', () => {
         mainWindow.webContents.send('load-workspace', config);
