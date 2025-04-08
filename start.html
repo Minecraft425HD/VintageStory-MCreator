@@ -143,32 +143,32 @@
         const historyFile = path.join(__dirname, 'history.json');
 
         function restrictInput(inputElement, regex) {
-    const errorDiv = document.createElement('div');
-    errorDiv.style.color = 'red';
-    errorDiv.style.display = 'none';
-    inputElement.parentNode.insertBefore(errorDiv, inputElement.nextSibling);
+            const errorDiv = document.createElement('div');
+            errorDiv.style.color = 'red';
+            errorDiv.style.display = 'none';
+            inputElement.parentNode.insertBefore(errorDiv, inputElement.nextSibling);
 
-    inputElement.addEventListener('input', (e) => {
-        const originalValue = e.target.value;
-        const sanitizedValue = originalValue.replace(regex, '');
-        if (originalValue !== sanitizedValue) {
-            e.target.value = sanitizedValue;
-            errorDiv.textContent = 'Ungültige Zeichen wurden entfernt. Nur erlaubte Zeichen sind möglich.';
-            errorDiv.style.display = 'block';
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 2000); // Fehlermeldung nach 2 Sekunden ausblenden
-            e.target.focus();
-            e.target.setSelectionRange(sanitizedValue.length, sanitizedValue.length);
+            inputElement.addEventListener('input', (e) => {
+                const originalValue = e.target.value;
+                const sanitizedValue = originalValue.replace(regex, '');
+                if (originalValue !== sanitizedValue) {
+                    e.target.value = sanitizedValue;
+                    errorDiv.textContent = 'Ungültige Zeichen wurden entfernt. Nur erlaubte Zeichen sind möglich.';
+                    errorDiv.style.display = 'block';
+                    setTimeout(() => {
+                        errorDiv.style.display = 'none';
+                    }, 2000);
+                    e.target.focus();
+                    e.target.setSelectionRange(sanitizedValue.length, sanitizedValue.length);
+                }
+            });
         }
-    });
-}
 
         // Regex für erlaubte Zeichen
-        const allowedChars = /[^a-zA-Z0-9-_]/g; // Für modName und author
-        const versionChars = /[^0-9.]/g; // Für version
-        const descChars = /[^\w\s.,-]/g; // Für description
-        const depChars = /[^a-zA-Z0-9:,*]/g; // Für dependencies
+        const allowedChars = /[^a-zA-Z0-9-_]/g;
+        const versionChars = /[^0-9.]/g;
+        const descChars = /[^\w\s.,-]/g;
+        const depChars = /[^a-zA-Z0-9:,*]/g;
 
         // Validierung auf Eingabefelder anwenden
         restrictInput(document.getElementById('modName'), allowedChars);
@@ -182,15 +182,24 @@
             if (fs.existsSync(historyFile)) {
                 history = JSON.parse(fs.readFileSync(historyFile, 'utf8'));
             }
+            // Filtere nur existierende Dateien
+            const validHistory = history.filter(file => fs.existsSync(file));
+            // Aktualisiere history.json mit gültigen Einträgen
+            fs.writeFileSync(historyFile, JSON.stringify(validHistory, null, 2));
+
             const historyList = document.getElementById('historyList');
             historyList.innerHTML = '<h3>Verlauf</h3>';
-            history.forEach(file => {
-                const div = document.createElement('div');
-                div.className = 'history-item';
-                div.textContent = path.basename(file);
-                div.onclick = () => loadWorkspace(file);
-                historyList.appendChild(div);
-            });
+            if (validHistory.length === 0) {
+                historyList.innerHTML += '<p>Keine verfügbaren Workspaces gefunden.</p>';
+            } else {
+                validHistory.forEach(file => {
+                    const div = document.createElement('div');
+                    div.className = 'history-item';
+                    div.textContent = path.basename(file);
+                    div.onclick = () => loadWorkspace(file);
+                    historyList.appendChild(div);
+                });
+            }
         }
 
         const modal = document.getElementById('configModal');
@@ -263,7 +272,8 @@
             loadWorkspace(filePath);
         });
 
-        loadHistory();
+        // Lade Verlauf beim Start
+        document.addEventListener('DOMContentLoaded', loadHistory);
     </script>
 </body>
 </html>
