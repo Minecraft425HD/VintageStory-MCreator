@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
-const remoteMain = require('@electron/remote/main'); // Hinzufügen
-remoteMain.initialize(); // Initialisierung
+const remoteMain = require('@electron/remote/main');
+remoteMain.initialize();
 
 let startWindow;
 let mainWindow;
@@ -15,11 +15,11 @@ function createStartWindow() {
             contextIsolation: false
         }
     });
-    remoteMain.enable(startWindow.webContents); // Aktiviere remote für dieses Fenster
+    remoteMain.enable(startWindow.webContents);
     startWindow.loadFile('start.html');
 }
 
-function createMainWindow(filePath) {
+function createMainWindow(config) {
     mainWindow = new BrowserWindow({
         width: 1000,
         height: 700,
@@ -28,15 +28,13 @@ function createMainWindow(filePath) {
             contextIsolation: false
         }
     });
-    remoteMain.enable(mainWindow.webContents); // Aktiviere remote für dieses Fenster
+    remoteMain.enable(mainWindow.webContents);
     mainWindow.loadFile('index.html');
     mainWindow.webContents.openDevTools();
 
-    if (filePath) {
-        mainWindow.webContents.on('did-finish-load', () => {
-            mainWindow.webContents.send('load-workspace', filePath);
-        });
-    }
+    mainWindow.webContents.on('did-finish-load', () => {
+        mainWindow.webContents.send('load-workspace', config);
+    });
 
     startWindow.close();
 }
@@ -81,6 +79,6 @@ ipcMain.on('select-workspace-file', (event) => {
     });
 });
 
-ipcMain.on('open-main-window', (event, filePath) => {
-    createMainWindow(filePath);
+ipcMain.on('open-main-window', (event, config) => {
+    createMainWindow(config);
 });
