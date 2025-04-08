@@ -460,41 +460,56 @@ namespace ${modConfig.modName} {
         Blockly.Blocks['vs_block_gui_csharp'] = {
             init: function() {
                 this.appendDummyInput()
-                    .appendField("GUI Block")
-                    .appendField(new Blockly.FieldTextInput("myguiblock", validateName), "NAME");
+                    .appendField("GUI für Block")
+                    .appendField(new Blockly.FieldDropdown(this.getBlockOptions.bind(this), this.validateBlockName), "BLOCKNAME");
                 this.appendDummyInput()
                     .appendField("Button Text")
                     .appendField(new Blockly.FieldTextInput("Klick mich", validateText), "BUTTON");
                 this.setPreviousStatement(true, null);
                 this.setNextStatement(true, null);
                 this.setColour(250);
+            },
+            getBlockOptions: function() {
+                const blocks = workspace.getAllBlocks().filter(b => b.type === 'vs_new_block');
+                const options = blocks.map(b => {
+                    const name = b.getFieldValue('NAME');
+                    return [name, name];
+                });
+                if (options.length === 0) {
+                    return [["Kein Block definiert", "myblock"]];
+                }
+                return options;
+            },
+            validateBlockName: function(newValue) {
+                return newValue || "myblock";
             }
         };
 
         Blockly.JavaScript['vs_block_gui_csharp'] = function(block) {
-            var name = block.getFieldValue('NAME');
+            var blockName = block.getFieldValue('BLOCKNAME');
             var buttonText = block.getFieldValue('BUTTON');
             var csharp = `
 using Vintagestory.API.Common;
 using Vintagestory.API.Client;
 
 namespace ${modConfig.modName} {
-    public class Block${name} : Block {
+    public class Block${blockName} : Block {
         public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel) {
             if (world.Side == EnumAppSide.Client) {
                 ICoreClientAPI capi = (world.Api as ICoreClientAPI);
-                GuiDialog dlg = new GuiDialog${name}(capi);
+                GuiDialog dlg = new GuiDialog${blockName}(capi);
                 dlg.TryOpen();
             }
             return true;
         }
     }
 
-    public class GuiDialog${name} : GuiDialog {
-        public GuiDialog${name}(ICoreClientAPI capi) : base(capi) { SetupDialog(); }
+    public class GuiDialog${blockName} : GuiDialog {
+        public override string ToggleKeyCombinationCode => "mygui_${blockName}";
+        public GuiDialog${blockName}(ICoreClientAPI capi) : base(capi) { SetupDialog(); }
         private void SetupDialog() {
             ElementBounds dialogBounds = ElementBounds.Fixed(0, 0, 200, 100);
-            SingleComposer = capi.Gui.CreateCompo("mygui_${name}", dialogBounds)
+            SingleComposer = capi.Gui.CreateCompo("mygui_${blockName}", dialogBounds)
                 .AddButton("${buttonText}", OnButtonPressed, ElementBounds.Fixed(10, 30, 180, 40))
                 .Compose();
         }
@@ -506,7 +521,7 @@ namespace ${modConfig.modName} {
     }
 }
 `;
-            return 'csharp:' + name + ':' + csharp + '|||';
+            return 'csharp:' + blockName + ':' + csharp + '|||';
         };
 
         Blockly.Blocks['vs_event_handler'] = {
@@ -926,6 +941,7 @@ namespace ${modConfig.modName} {
         };
         dialog.showSaveDialog({
             title: "Workspace speichern",
+            defaultPath: path.join(__dirname, `${modConfig.modName}.json`),
             filters: [{ name: 'JSON Files', extensions: ['json'] }]
         }).then(result => {
             if (!result.canceled && result.filePath) {
