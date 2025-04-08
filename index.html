@@ -135,14 +135,21 @@
     const fs = require('fs');
     const path = require('path');
     const { ipcRenderer } = require('electron');
-    const remote = require('@electron/remote'); // Hinzugefügt für remote
-    const dialog = remote.dialog; // Verwende remote.dialog statt direkt dialog
+    const remote = require('@electron/remote');
+    const dialog = remote.dialog;
     const AdmZip = require('adm-zip');
     const { execSync } = require('child_process');
 
     let selectedTexturePath = null;
     let textureList = [];
     let workspace = null;
+    let modConfig = {
+        modName: 'mymod2',
+        author: 'Mod-Creator User',
+        version: '1.0.0',
+        description: 'Erstellt mit dem Vintage Story Mod-Creator',
+        dependencies: { 'game': '*' }
+    };
 
     try {
         workspace = Blockly.inject('blocklyDiv', {
@@ -168,11 +175,29 @@
             grid: { spacing: 20, length: 3, colour: '#ccc', snap: true }
         });
 
+        // Validator-Funktionen
+        function validateName(newValue) {
+            const allowed = /^[a-zA-Z0-9-_]*$/;
+            return allowed.test(newValue) ? newValue : newValue.replace(/[^a-zA-Z0-9-_]/g, '');
+        }
+        function validatePattern(newValue) {
+            const allowed = /^[a-zA-Z0-9_,]*$/;
+            return allowed.test(newValue) ? newValue : newValue.replace(/[^a-zA-Z0-9_,]/g, '');
+        }
+        function validateCode(newValue) {
+            const allowed = /^[a-zA-Z0-9:_-]*$/;
+            return allowed.test(newValue) ? newValue : newValue.replace(/[^a-zA-Z0-9:_-]/g, '');
+        }
+        function validateText(newValue) {
+            const allowed = /^[a-zA-Z0-9\s.,_-]*$/;
+            return allowed.test(newValue) ? newValue : newValue.replace(/[^a-zA-Z0-9\s.,_-]/g, '');
+        }
+
         Blockly.Blocks['vs_new_block'] = {
             init: function() {
                 this.appendDummyInput()
                     .appendField("Neuer Block")
-                    .appendField(new Blockly.FieldTextInput("myblock"), "NAME");
+                    .appendField(new Blockly.FieldTextInput("myblock", validateName), "NAME");
                 this.appendDummyInput()
                     .appendField("Texturtyp")
                     .appendField(new Blockly.FieldDropdown([["Einheitlich", "SINGLE"], ["Sechsseitig", "SIX_SIDED"]]), "TEXTURE_TYPE");
@@ -239,8 +264,8 @@
             var walkable = block.getFieldValue('WALKABLE') === 'TRUE';
             var drop = block.getFieldValue('DROP');
             var json = {
-                "code": "mymod2:" + name,
-                "class": "MyMod2.Block" + name.charAt(0).toUpperCase() + name.slice(1),
+                "code": `${modConfig.modName}:${name}`,
+                "class": `${modConfig.modName}.Block${name}`,
                 "drawtype": "Cube",
                 "resistance": parseFloat(resistance),
                 "lightAbsorption": parseInt(lightAbsorption),
@@ -255,7 +280,7 @@
             }
             json.drops = [{
                 "type": "block",
-                "code": drop === "SELF" ? "mymod2:" + name : drop,
+                "code": drop === "SELF" ? `${modConfig.modName}:${name}` : drop,
                 "quantity": { "avg": 1, "var": 0 }
             }];
             if (textureType === 'SINGLE') {
@@ -280,11 +305,11 @@
             var csharp = `
 using Vintagestory.API.Common;
 
-namespace MyMod2 {
-    public class Block${name.charAt(0).toUpperCase() + name.slice(1)} : Block {
+namespace ${modConfig.modName} {
+    public class Block${name} : Block {
         public override void OnLoaded(ICoreAPI api) {
             base.OnLoaded(api);
-            api.Logger.Notification("Block${name.charAt(0).toUpperCase() + name.slice(1)} loaded successfully!");
+            api.Logger.Notification("Block${name} loaded successfully!");
         }
     }
 }
@@ -311,16 +336,16 @@ namespace MyMod2 {
             init: function() {
                 this.appendDummyInput()
                     .appendField("Neues Rezept")
-                    .appendField(new Blockly.FieldTextInput("S_,H_"), "PATTERN");
+                    .appendField(new Blockly.FieldTextInput("S_,H_", validatePattern), "PATTERN");
                 this.appendDummyInput()
                     .appendField("Zutat 1")
-                    .appendField(new Blockly.FieldTextInput("game:stick"), "ING1");
+                    .appendField(new Blockly.FieldTextInput("game:stick", validateCode), "ING1");
                 this.appendDummyInput()
                     .appendField("Zutat 2")
-                    .appendField(new Blockly.FieldTextInput("game:plank-oak"), "ING2");
+                    .appendField(new Blockly.FieldTextInput("game:plank-oak", validateCode), "ING2");
                 this.appendDummyInput()
                     .appendField("Ergebnis")
-                    .appendField(new Blockly.FieldTextInput("mymod2:table"), "OUTPUT");
+                    .appendField(new Blockly.FieldTextInput(`${modConfig.modName}:table`, validateCode), "OUTPUT");
                 this.setPreviousStatement(true, null);
                 this.setNextStatement(true, null);
                 this.setColour(230);
@@ -347,10 +372,10 @@ namespace MyMod2 {
             init: function() {
                 this.appendDummyInput()
                     .appendField("Multiblock")
-                    .appendField(new Blockly.FieldTextInput("mymultiblock"), "NAME");
+                    .appendField(new Blockly.FieldTextInput("mymultiblock", validateName), "NAME");
                 this.appendDummyInput()
                     .appendField("Muster")
-                    .appendField(new Blockly.FieldTextInput("BBB,B_B"), "PATTERN");
+                    .appendField(new Blockly.FieldTextInput("BBB,B_B", validatePattern), "PATTERN");
                 this.setPreviousStatement(true, null);
                 this.setNextStatement(true, null);
                 this.setColour(160);
@@ -361,7 +386,7 @@ namespace MyMod2 {
             var name = block.getFieldValue('NAME');
             var pattern = block.getFieldValue('PATTERN').split(',');
             var json = {
-                "code": "mymod2:" + name,
+                "code": `${modConfig.modName}:${name}`,
                 "class": "Block",
                 "shape": { "base": "game:shapes/multiblock", "pattern": pattern },
                 "blockelements": [{ "code": "game:stone" }]
@@ -376,7 +401,7 @@ namespace MyMod2 {
                     .appendField(new Blockly.FieldDropdown(this.getBlockOptions.bind(this), this.validateBlockName), "BLOCKNAME");
                 this.appendDummyInput()
                     .appendField("Aktion")
-                    .appendField(new Blockly.FieldTextInput("Nachricht anzeigen"), "ACTION");
+                    .appendField(new Blockly.FieldTextInput("Nachricht anzeigen", validateText), "ACTION");
                 this.setPreviousStatement(true, null);
                 this.setNextStatement(true, null);
                 this.setColour(200);
@@ -401,16 +426,16 @@ namespace MyMod2 {
             var blockName = block.getFieldValue('BLOCKNAME');
             var action = block.getFieldValue('ACTION');
             var behaviorJson = {
-                "name": "MyMod2.Behavior" + blockName.charAt(0).toUpperCase() + blockName.slice(1)
+                "name": `${modConfig.modName}.Behavior${blockName}`
             };
             var csharp = `
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 using Vintagestory.API.Client;
 
-namespace MyMod2 {
-    public class Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)} : BlockBehavior {
-        public Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)}(Block block) : base(block) {
+namespace ${modConfig.modName} {
+    public class Behavior${blockName} : BlockBehavior {
+        public Behavior${blockName}(Block block) : base(block) {
         }
 
         public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel, ref EnumHandling handling) {
@@ -421,7 +446,7 @@ namespace MyMod2 {
             if (world.Side == EnumAppSide.Server) {
                 ICoreServerAPI sapi = world.Api as ICoreServerAPI;
                 sapi.SendMessage(byPlayer, 0, "${action}", EnumChatType.Notification);
-                world.Logger.Notification("Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)} triggered for block " + block.Code);
+                world.Logger.Notification("Behavior${blockName} triggered for block " + block.Code);
             }
             handling = EnumHandling.PreventDefault;
             return true;
@@ -429,17 +454,17 @@ namespace MyMod2 {
     }
 }
 `;
-            return `json:${JSON.stringify(behaviorJson, null, 2)}|||csharp:Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)}:${csharp}|||`;
+            return `json:${JSON.stringify(behaviorJson, null, 2)}|||csharp:Behavior${blockName}:${csharp}|||`;
         };
 
         Blockly.Blocks['vs_block_gui_csharp'] = {
             init: function() {
                 this.appendDummyInput()
                     .appendField("GUI Block")
-                    .appendField(new Blockly.FieldTextInput("myguiblock"), "NAME");
+                    .appendField(new Blockly.FieldTextInput("myguiblock", validateName), "NAME");
                 this.appendDummyInput()
                     .appendField("Button Text")
-                    .appendField(new Blockly.FieldTextInput("Klick mich"), "BUTTON");
+                    .appendField(new Blockly.FieldTextInput("Klick mich", validateText), "BUTTON");
                 this.setPreviousStatement(true, null);
                 this.setNextStatement(true, null);
                 this.setColour(250);
@@ -453,7 +478,7 @@ namespace MyMod2 {
 using Vintagestory.API.Common;
 using Vintagestory.API.Client;
 
-namespace MyMod2 {
+namespace ${modConfig.modName} {
     public class Block${name} : Block {
         public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel) {
             if (world.Side == EnumAppSide.Client) {
@@ -488,10 +513,10 @@ namespace MyMod2 {
             init: function() {
                 this.appendDummyInput()
                     .appendField("Wenn Block platziert")
-                    .appendField(new Blockly.FieldTextInput("myblock"), "BLOCKNAME");
+                    .appendField(new Blockly.FieldTextInput("myblock", validateName), "BLOCKNAME");
                 this.appendDummyInput()
                     .appendField("Aktion")
-                    .appendField(new Blockly.FieldTextInput("Explodiere"), "ACTION");
+                    .appendField(new Blockly.FieldTextInput("Explodiere", validateText), "ACTION");
                 this.setPreviousStatement(true, null);
                 this.setNextStatement(true, null);
                 this.setColour(180);
@@ -504,12 +529,12 @@ namespace MyMod2 {
             var csharp = `
 using Vintagestory.API.Common;
 
-namespace MyMod2 {
+namespace ${modConfig.modName} {
     public class Event${blockName} : ModSystem {
         public override void Start(ICoreAPI api) {
             base.Start(api);
             api.Event.BlockPlaced += (world, byPlayer, blockSel) => {
-                if (blockSel.Block.Code == "mymod2:${blockName}") {
+                if (blockSel.Block.Code == "${modConfig.modName}:${blockName}") {
                     world.Logger.Notification("${action}");
                 }
             };
@@ -608,27 +633,25 @@ namespace MyMod2 {
 using Vintagestory.API.Common;
 using Vintagestory.API.Datastructures;
 
-namespace MyMod2 {
-    public class MyMod2 : ModSystem {
+namespace ${modConfig.modName} {
+    public class ${modConfig.modName} : ModSystem {
         public override void StartPre(ICoreAPI api) {
             base.StartPre(api);
-            api.Logger.Notification("MyMod2: StartPre called - Registering classes...");
+            api.Logger.Notification("${modConfig.modName}: StartPre called - Registering classes...");
 `;
 
         for (const blockName in blockClassMap) {
             const className = blockClassMap[blockName];
             code += `
-            // Registriere die benutzerdefinierte Block-Klasse
-            api.RegisterBlockClass("${className}", typeof(Block${blockName.charAt(0).toUpperCase() + blockName.slice(1)}));
-            api.Logger.Notification("MyMod2: ${className} class registered!");
+            api.RegisterBlockClass("${className}", typeof(Block${blockName}));
+            api.Logger.Notification("${modConfig.modName}: ${className} class registered!");
 `;
         }
 
         for (const blockName in behaviorMap) {
             code += `
-            // Registriere das benutzerdefinierte Verhalten
-            api.RegisterBlockBehaviorClass("MyMod2.Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)}", typeof(Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)}));
-            api.Logger.Notification("MyMod2: Behavior${blockName.charAt(0).toUpperCase() + blockName.slice(1)} behavior registered!");
+            api.RegisterBlockBehaviorClass("${modConfig.modName}.Behavior${blockName}", typeof(Behavior${blockName}));
+            api.Logger.Notification("${modConfig.modName}: Behavior${blockName} behavior registered!");
 `;
         }
 
@@ -637,7 +660,7 @@ namespace MyMod2 {
 
         public override void Start(ICoreAPI api) {
             base.Start(api);
-            api.Logger.Notification("MyMod2 geladen!");
+            api.Logger.Notification("${modConfig.modName} geladen!");
         }
     }
 }
@@ -650,13 +673,12 @@ namespace MyMod2 {
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
-    <AssemblyName>MyMod2</AssemblyName>
+    <AssemblyName>${modConfig.modName}</AssemblyName>
     <OutputType>Library</OutputType>
-    <RootNamespace>MyMod2</RootNamespace>
+    <RootNamespace>${modConfig.modName}</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Nur benötigte Vintage Story Bibliotheken -->
     <Reference Include="Vintagestory">
       <HintPath>${path.join(vsPath, 'Vintagestory.dll')}</HintPath>
       <Private>false</Private>
@@ -667,14 +689,21 @@ namespace MyMod2 {
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <!-- Bindungsweiterleitung für System.Collections.Immutable -->
-    <PackageReference Include="System.Collections.Immutable" Version="8.	0.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
   </ItemGroup>
 </Project>`;
     }
 
+    function sanitizeFileName(name) {
+        return name.replace(/[^a-zA-Z0-9-_]/g, '');
+    }
+
     function generateMod() {
-        const logFilePath = path.join(__dirname, 'mod_creation.log');
+        if (!/^[a-zA-Z0-9-_]+$/.test(modConfig.modName)) {
+            throw new Error("Ungültiger Mod-Name: Nur Buchstaben, Zahlen, Bindestriche und Unterstriche sind erlaubt.");
+        }
+
+        const logFilePath = path.join(__dirname, `${sanitizeFileName(modConfig.modName)}_creation.log`);
         fs.writeFileSync(logFilePath, '', 'utf8');
 
         let outputText = '';
@@ -715,12 +744,12 @@ namespace MyMod2 {
 
             const modinfo = {
                 "type": items.some(item => item.startsWith('csharp:')) ? "code" : "content",
-                "modid": "mymod2",
-                "name": "Mein Mod",
-                "authors": ["Mod-Creator User"],
-                "description": "Erstellt mit dem Vintage Story Mod-Creator",
-                "version": "1.0.0",
-                "dependencies": { "game": "*" }
+                "modid": modConfig.modName,
+                "name": modConfig.modName,
+                "authors": [modConfig.author],
+                "description": modConfig.description,
+                "version": modConfig.version,
+                "dependencies": modConfig.dependencies
             };
             const modinfoPath = path.join(tempDir, 'modinfo.json');
             fs.writeFileSync(modinfoPath, JSON.stringify(modinfo, null, 2) + '\n', 'utf8');
@@ -733,8 +762,8 @@ namespace MyMod2 {
                     try {
                         const json = JSON.parse(item.trim());
                         outputText += `JSON geparst: ${JSON.stringify(json, null, 2)}\n`;
-                        if (json.class && json.class.startsWith("MyMod2.Block") && json.class.split('.').length === 2) {
-                            const blockName = json.class.split('.')[1].substring(5).toLowerCase();
+                        if (json.class && json.class.startsWith(`${modConfig.modName}.Block`) && json.class.split('.').length === 2) {
+                            const blockName = json.class.split('.')[1].substring(5);
                             blockClassMap[blockName] = json.class;
                             outputText += `Blockname extrahiert: ${blockName}\n`;
                         } else {
@@ -749,7 +778,7 @@ namespace MyMod2 {
             items.forEach((item, index) => {
                 if (item.startsWith('json:')) {
                     const behaviorJson = JSON.parse(item.replace('json:', ''));
-                    const behaviorName = behaviorJson.name.split('.').pop().substring(8).toLowerCase();
+                    const behaviorName = behaviorJson.name.split('.').pop().substring(8);
                     if (blockClassMap[behaviorName]) {
                         behaviors.push(behaviorJson);
                         behaviorMap[behaviorName] = true;
@@ -762,51 +791,48 @@ namespace MyMod2 {
 
             items.forEach((item, index) => {
                 if (item.startsWith('json:')) {
-                    // Bereits verarbeitet
                 } else if (item.startsWith('csharp:')) {
                     hasCSharp = true;
                     const parts = item.split(':');
                     const name = parts[1];
                     const csharpCode = parts.slice(2).join(':').trim();
                     fs.mkdirSync(path.join(tempDir, 'src'), { recursive: true });
-                    fs.writeFileSync(path.join(tempDir, 'src', `${name}.cs`), csharpCode);
-                    outputText += `C#-Datei erstellt: src/${name}.cs\n`;
-                    outputText += `Inhalt von src/${name}.cs:\n${csharpCode}\n\n`;
+                    fs.writeFileSync(path.join(tempDir, 'src', `${sanitizeFileName(name)}.cs`), csharpCode);
+                    outputText += `C#-Datei erstellt: src/${sanitizeFileName(name)}.cs\n`;
+                    outputText += `Inhalt von src/${sanitizeFileName(name)}.cs:\n${csharpCode}\n\n`;
                 } else {
                     const json = JSON.parse(item.trim());
-                    if (json.class && (json.class.startsWith("MyMod2.Block") || json.class === "Block")) {
-                        fs.mkdirSync(path.join(tempDir, 'assets/mymod2/blocktypes'), { recursive: true });
-                        const blockNameFromClass = json.class.split('.')[1].substring(5).toLowerCase();
-                        
+                    if (json.class && (json.class.startsWith(`${modConfig.modName}.Block`) || json.class === "Block")) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/blocktypes`), { recursive: true });
+                        const blockNameFromClass = json.class.split('.').length > 1 ? json.class.split('.')[1].substring(5) : json.code.split(':')[1];
                         if (behaviors.length > 0) {
                             outputText += `Prüfe Verhalten für Block ${blockNameFromClass}:\n`;
                             outputText += `Verfügbare Verhalten: ${JSON.stringify(behaviors, null, 2)}\n`;
                             json.behaviors = behaviors.filter(b => {
-                                const behaviorBlockName = b.name.split('.').pop().substring(8).toLowerCase();
+                                const behaviorBlockName = b.name.split('.').pop().substring(8);
                                 outputText += `Vergleiche: ${behaviorBlockName} mit ${blockNameFromClass}\n`;
                                 return behaviorBlockName === blockNameFromClass;
                             });
                             outputText += `Zugewiesene Verhalten: ${JSON.stringify(json.behaviors, null, 2)}\n`;
                         }
-
-                        const blockFilePath = path.join(tempDir, 'assets/mymod2/blocktypes', `${json.code.split(':')[1]}.json`);
+                        const blockFilePath = path.join(tempDir, `assets/${modConfig.modName}/blocktypes`, `${sanitizeFileName(json.code.split(':')[1])}.json`);
                         fs.writeFileSync(blockFilePath, JSON.stringify(json, null, 2));
-                        outputText += `Block-Datei erstellt: assets/mymod2/blocktypes/${json.code.split(':')[1]}.json\n`;
+                        outputText += `Block-Datei erstellt: assets/${modConfig.modName}/blocktypes/${sanitizeFileName(json.code.split(':')[1])}.json\n`;
                     } else if (json.ingredientPattern) {
-                        fs.mkdirSync(path.join(tempDir, 'assets/mymod2/recipes'), { recursive: true });
-                        fs.writeFileSync(path.join(tempDir, 'assets/mymod2/recipes', `${json.output.code.split(':')[1]}_recipe.json`), JSON.stringify(json, null, 2));
-                        outputText += `Rezept-Datei erstellt: assets/mymod2/recipes/${json.output.code.split(':')[1]}_recipe.json\n`;
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes`), { recursive: true });
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes`, `${sanitizeFileName(json.output.code.split(':')[1])}_recipe.json`), JSON.stringify(json, null, 2));
+                        outputText += `Rezept-Datei erstellt: assets/${modConfig.modName}/recipes/${sanitizeFileName(json.output.code.split(':')[1])}_recipe.json\n`;
                     }
                 }
             });
 
             if (textureList.length > 0) {
-                const textureDir = path.join(tempDir, 'assets/mymod2/textures/block');
+                const textureDir = path.join(tempDir, `assets/${modConfig.modName}/textures/block`);
                 fs.mkdirSync(textureDir, { recursive: true });
                 textureList.forEach(texture => {
                     const textureFile = path.join(textureDir, path.basename(texture));
                     fs.copyFileSync(texture, textureFile);
-                    outputText += `Textur kopiert: assets/mymod2/textures/block/${path.basename(texture)}\n`;
+                    outputText += `Textur kopiert: assets/${modConfig.modName}/textures/block/${path.basename(texture)}\n`;
                 });
             }
 
@@ -817,17 +843,17 @@ namespace MyMod2 {
                 outputText += `Inhalt von src/Mod.cs:\n${modSystemCode}\n\n`;
 
                 const csprojContent = generateCsprojContent(vsPath);
-                fs.writeFileSync(path.join(tempDir, 'mymod2.csproj'), csprojContent);
-                outputText += "mymod2.csproj erstellt:\n" + fs.readFileSync(path.join(tempDir, 'mymod2.csproj'), 'utf8') + "\n";
+                fs.writeFileSync(path.join(tempDir, `${sanitizeFileName(modConfig.modName)}.csproj`), csprojContent);
+                outputText += `${sanitizeFileName(modConfig.modName)}.csproj erstellt:\n` + fs.readFileSync(path.join(tempDir, `${sanitizeFileName(modConfig.modName)}.csproj`), 'utf8') + "\n";
 
                 const buildDir = path.join(tempDir, 'bin', 'Release', 'net7.0');
                 try {
-                    const buildCommand = `dotnet build "${path.join(tempDir, 'mymod2.csproj')}" -c Release -o "${buildDir}" -v normal`;
+                    const buildCommand = `dotnet build "${path.join(tempDir, `${sanitizeFileName(modConfig.modName)}.csproj`)}" -c Release -o "${buildDir}" -v normal`;
                     outputText += `Starte Kompilierung mit Befehl: ${buildCommand}\n`;
                     outputText += `--------------------------------\n`;
                     const buildOutput = execSync(buildCommand, { encoding: 'utf8' });
                     outputText += `--------------------------------\n`;
-                    outputText += "C#-Code kompiliert zu MyMod2.dll.\n";
+                    outputText += `C#-Code kompiliert zu ${sanitizeFileName(modConfig.modName)}.dll.\n`;
                     outputText += `Build-Ausgabe:\n${buildOutput}\n`;
                 } catch (buildError) {
                     outputText += `--------------------------------\n`;
@@ -848,15 +874,15 @@ namespace MyMod2 {
                 outputText += "assets/ zur ZIP hinzugefügt.\n";
             }
 
-            const dllPath = path.join(tempDir, 'bin', 'Release', 'net7.0', 'MyMod2.dll');
+            const dllPath = path.join(tempDir, 'bin', 'Release', 'net7.0', `${sanitizeFileName(modConfig.modName)}.dll`);
             if (fs.existsSync(dllPath)) {
                 finalZip.addLocalFile(dllPath);
-                outputText += "MyMod2.dll zur ZIP hinzugefügt.\n";
+                outputText += `${sanitizeFileName(modConfig.modName)}.dll zur ZIP hinzugefügt.\n`;
             } else if (hasCSharp) {
-                throw new Error("Kompilierung fehlgeschlagen: MyMod2.dll nicht gefunden.");
+                throw new Error(`Kompilierung fehlgeschlagen: ${sanitizeFileName(modConfig.modName)}.dll nicht gefunden.`);
             }
 
-            const outputZipPath = path.join(__dirname, 'mymod2.zip');
+            const outputZipPath = path.join(__dirname, `${sanitizeFileName(modConfig.modName)}.zip`);
             finalZip.writeZip(outputZipPath);
             outputText += `Mod erstellt: ${outputZipPath}\nFüge es in %appdata%/VintagestoryData/Mods ein.\n`;
             outputText += `Log-Datei ist verfügbar unter: ${logFilePath}\n`;
@@ -871,26 +897,39 @@ namespace MyMod2 {
         }
     }
 
-    // Empfange geladenen Workspace
-    ipcRenderer.on('load-workspace', (event, filePath) => {
-        try {
-            const workspaceData = fs.readFileSync(filePath, 'utf8');
-            Blockly.serialization.workspaces.load(JSON.parse(workspaceData), workspace);
-            document.getElementById('output').innerText = `Workspace geladen von: ${filePath}`;
-        } catch (err) {
-            document.getElementById('output').innerText = `Fehler beim Laden des Workspaces: ${err.message}`;
+    ipcRenderer.on('load-workspace', (event, config) => {
+        modConfig = {
+            modName: config.modName || 'mymod2',
+            author: config.author || 'Mod-Creator User',
+            version: config.version || '1.0.0',
+            description: config.description || 'Erstellt mit dem Vintage Story Mod-Creator',
+            dependencies: config.dependencies || { 'game': '*' }
+        };
+        if (config.filePath) {
+            try {
+                const workspaceData = fs.readFileSync(config.filePath, 'utf8');
+                const parsedData = JSON.parse(workspaceData);
+                Blockly.serialization.workspaces.load(parsedData.workspace, workspace);
+                document.getElementById('output').innerText = `Workspace geladen von: ${config.filePath}\nMod-Name: ${modConfig.modName}`;
+            } catch (err) {
+                document.getElementById('output').innerText = `Fehler beim Laden des Workspaces: ${err.message}`;
+            }
+        } else {
+            document.getElementById('output').innerText = `Neuer Workspace erstellt mit Mod-Name: ${modConfig.modName}`;
         }
     });
 
-    // Optional: Funktion zum Speichern des Workspaces
     function saveWorkspace() {
-        const workspaceData = JSON.stringify(Blockly.serialization.workspaces.save(workspace));
+        const workspaceData = {
+            workspace: Blockly.serialization.workspaces.save(workspace),
+            modConfig: modConfig
+        };
         dialog.showSaveDialog({
             title: "Workspace speichern",
             filters: [{ name: 'JSON Files', extensions: ['json'] }]
         }).then(result => {
             if (!result.canceled && result.filePath) {
-                fs.writeFileSync(result.filePath, workspaceData);
+                fs.writeFileSync(result.filePath, JSON.stringify(workspaceData, null, 2));
                 document.getElementById('output').innerText = `Workspace gespeichert unter: ${result.filePath}`;
             }
         }).catch(err => {
@@ -898,7 +937,6 @@ namespace MyMod2 {
         });
     }
 
-    // Füge einen Speichern-Button zu .controls hinzu
     document.querySelector('.controls').insertAdjacentHTML('beforeend', '<button onclick="saveWorkspace()">Workspace speichern</button>');
     </script>
 </body>
