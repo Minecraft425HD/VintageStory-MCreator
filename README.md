@@ -14,7 +14,7 @@ A VintageStory Mod Creator
 - Behaviors
   - Simple behavior block
   - Simple gui block
-- Custom recipes (beta)
+- Custom recipes
 - Multiblock structures (WIP)
 
 ![2025-04-09 00_37_08-Greenshot](https://github.com/user-attachments/assets/7b3f76b1-c627-4e4c-a642-bfd99ca2aff9)
@@ -33,13 +33,9 @@ A VintageStory Mod Creator
 
 ![2025-04-09 00_40_29-Greenshot](https://github.com/user-attachments/assets/e348eed0-51fd-4b41-9d81-448c2cb6789e)
 
-![Uploading 2025-04-09 00_40_38-Greenshot.png…]()
-
 ![2025-04-09 00_40_47-Greenshot](https://github.com/user-attachments/assets/09a5ea73-eaa8-4e00-a8ab-b10dd0c15cd4)
 
 ![2025-04-09 00_41_21-Greenshot](https://github.com/user-attachments/assets/93f4461a-2340-4f25-9e1e-43a79122ee97)
-
-![Uploading 2025-04-09 00_41_33-Greenshot.png…]()
 
 ![2025-04-09 00_41_42-Greenshot](https://github.com/user-attachments/assets/2b8c796e-de6f-4175-b815-f8b1a6240970)
 
