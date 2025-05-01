@@ -11,6 +11,7 @@ A VintageStory Mod Creator
   - Many options per block
   - Custom names
   - Single and multi texturing
+  - Connectable Behaviors
 - Behaviors
   - Simple behavior block
   - Simple gui block
