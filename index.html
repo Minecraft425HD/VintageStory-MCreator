@@ -158,14 +158,108 @@
                     <category name="Blöcke" colour="#2ecc71">
                         <block type="vs_new_block"></block>
                         <block type="vs_multiblock"></block>
+                        <block type="vs_liquid_block"></block>
+                        <block type="vs_plant_block"></block>
+                        <block type="vs_crop_block"></block>
+                        <block type="vs_door_block"></block>
+                        <block type="vs_container_block"></block>
+                        <block type="vs_light_source"></block>
+                        <block type="vs_rotatable_block"></block>
+                        <block type="vs_slab_stairs"></block>
+                        <block type="vs_falling_block"></block>
+                        <block type="vs_connected_textures"></block>
                     </category>
-                    <category name="Rezepte" colour="#f1c40f">
+                    <category name="Items & Werkzeuge" colour="#9b59b6">
+                        <block type="vs_new_item"></block>
+                        <block type="vs_new_tool"></block>
+                        <block type="vs_new_weapon"></block>
+                        <block type="vs_new_armor"></block>
+                        <block type="vs_item_durability"></block>
+                        <block type="vs_tool_mining_speed"></block>
+                        <block type="vs_tool_tier"></block>
+                        <block type="vs_item_stack_size"></block>
+                        <block type="vs_item_attributes"></block>
+                        <block type="vs_throwable_item"></block>
+                    </category>
+                    <category name="Entities & Kreaturen" colour="#e74c3c">
+                        <block type="vs_new_entity"></block>
+                        <block type="vs_entity_ai"></block>
+                        <block type="vs_entity_stats"></block>
+                        <block type="vs_entity_drops"></block>
+                        <block type="vs_entity_spawn"></block>
+                        <block type="vs_entity_animation"></block>
+                        <block type="vs_entity_sounds"></block>
+                        <block type="vs_entity_taming"></block>
+                        <block type="vs_entity_breeding"></block>
+                        <block type="vs_entity_mount"></block>
+                        <block type="vs_npc_trader"></block>
+                        <block type="vs_boss_entity"></block>
+                    </category>
+                    <category name="Weltgenerierung" colour="#1abc9c">
+                        <block type="vs_ore_deposit"></block>
+                        <block type="vs_structure_gen"></block>
+                        <block type="vs_biome_modifier"></block>
+                        <block type="vs_tree_type"></block>
+                        <block type="vs_cave_decorator"></block>
+                        <block type="vs_surface_deposit"></block>
+                        <block type="vs_ruins_generator"></block>
+                        <block type="vs_dungeon_gen"></block>
+                    </category>
+                    <category name="Crafting & Verarbeitung" colour="#f1c40f">
                         <block type="vs_new_recipe"></block>
+                        <block type="vs_grid_recipe"></block>
+                        <block type="vs_barrel_recipe"></block>
+                        <block type="vs_clay_forming"></block>
+                        <block type="vs_smithing_recipe"></block>
+                        <block type="vs_knapping_recipe"></block>
+                        <block type="vs_cooking_recipe"></block>
+                        <block type="vs_alloy_recipe"></block>
+                        <block type="vs_fuel_type"></block>
+                        <block type="vs_drying_recipe"></block>
+                        <block type="vs_grinding_recipe"></block>
+                    </category>
+                    <category name="Sounds & Partikel" colour="#3498db">
+                        <block type="vs_custom_sound"></block>
+                        <block type="vs_ambient_sound"></block>
+                        <block type="vs_particle_effect"></block>
+                        <block type="vs_block_particles"></block>
+                        <block type="vs_weather_particles"></block>
+                        <block type="vs_footstep_sound"></block>
+                    </category>
+                    <category name="GUI & HUD" colour="#e67e22">
+                        <block type="vs_custom_gui"></block>
+                        <block type="vs_hud_element"></block>
+                        <block type="vs_progress_bar"></block>
+                        <block type="vs_inventory_slots"></block>
+                        <block type="vs_button_element"></block>
+                        <block type="vs_text_input"></block>
+                        <block type="vs_dropdown_menu"></block>
+                        <block type="vs_tooltip"></block>
+                    </category>
+                    <category name="Commands & Events" colour="#95a5a6">
+                        <block type="vs_chat_command"></block>
+                        <block type="vs_keybind"></block>
+                        <block type="vs_on_player_join"></block>
+                        <block type="vs_on_block_break"></block>
+                        <block type="vs_on_entity_death"></block>
+                        <block type="vs_on_item_use"></block>
+                        <block type="vs_timer_event"></block>
+                        <block type="vs_world_tick"></block>
                     </category>
                     <category name="Verhalten" colour="#e67e22">
                         <block type="vs_block_behavior"></block>
                         <block type="vs_block_gui_csharp"></block>
                         <block type="vs_event_handler"></block>
+                    </category>
+                    <category name="Mechaniken & Systeme" colour="#8e44ad">
+                        <block type="vs_temperature_system"></block>
+                        <block type="vs_nutrition_type"></block>
+                        <block type="vs_skill_system"></block>
+                        <block type="vs_experience_gain"></block>
+                        <block type="vs_status_effect"></block>
+                        <block type="vs_damage_type"></block>
+                        <block type="vs_repair_system"></block>
+                        <block type="vs_decay_system"></block>
                     </category>
                 </xml>
             `,
@@ -560,7 +654,992 @@ namespace ${modConfig.modName} {
             return 'csharp:' + blockName + ':' + csharp + '|||';
         };
 
-        document.getElementById('output').innerText = "Blockly erfolgreich initialisiert.";
+        // ========== ITEMS & WERKZEUGE ==========
+        Blockly.Blocks['vs_new_item'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Neues Item").appendField(new Blockly.FieldTextInput("myitem", validateName), "NAME");
+                this.appendDummyInput().appendField("Textur").appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.appendDummyInput().appendField("Stapelgröße").appendField(new Blockly.FieldNumber(64, 1, 999), "STACK_SIZE");
+                this.appendDummyInput().appendField("Kategorie").appendField(new Blockly.FieldDropdown([["Allgemein","general"],["Werkzeuge","tools"],["Materialien","materials"],["Nahrung","food"]]), "CATEGORY");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(285);
+            }
+        };
+        Blockly.JavaScript['vs_new_item'] = function(block) {
+            var name = block.getFieldValue('NAME'), texture = block.getFieldValue('TEXTURE'), stackSize = block.getFieldValue('STACK_SIZE'), category = block.getFieldValue('CATEGORY');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "Item", "maxstacksize": parseInt(stackSize), "creativeinventory": { [category]: ["*"] }, "texture": { "base": texture !== "none" ? `item/${path.basename(texture, '.png')}` : "game:item/unknown" } };
+            return JSON.stringify(json, null, 2) + '|||item|||';
+        };
+
+        Blockly.Blocks['vs_new_tool'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Neues Werkzeug").appendField(new Blockly.FieldTextInput("mytool", validateName), "NAME");
+                this.appendDummyInput().appendField("Typ").appendField(new Blockly.FieldDropdown([["Spitzhacke","Pickaxe"],["Axt","Axe"],["Schaufel","Shovel"],["Schwert","Sword"],["Messer","Knife"],["Hacke","Hoe"],["Hammer","Hammer"],["Säge","Saw"]]), "TOOL_TYPE");
+                this.appendDummyInput().appendField("Textur").appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.appendDummyInput().appendField("Haltbarkeit").appendField(new Blockly.FieldNumber(250, 1, 10000), "DURABILITY");
+                this.appendDummyInput().appendField("Abbaugeschwindigkeit").appendField(new Blockly.FieldNumber(4.0, 0.1, 20, 0.1), "MINING_SPEED");
+                this.appendDummyInput().appendField("Angriffskraft").appendField(new Blockly.FieldNumber(3.0, 0.5, 50, 0.5), "ATTACK_POWER");
+                this.appendDummyInput().appendField("Stufe").appendField(new Blockly.FieldDropdown([["Stein","1"],["Kupfer","2"],["Bronze","3"],["Eisen","4"],["Stahl","5"],["Titan","6"]]), "TIER");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(285);
+            }
+        };
+        Blockly.JavaScript['vs_new_tool'] = function(block) {
+            var name = block.getFieldValue('NAME'), toolType = block.getFieldValue('TOOL_TYPE'), texture = block.getFieldValue('TEXTURE');
+            var durability = block.getFieldValue('DURABILITY'), miningSpeed = block.getFieldValue('MINING_SPEED'), attackPower = block.getFieldValue('ATTACK_POWER'), tier = block.getFieldValue('TIER');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "ItemTool", "tool": toolType.toLowerCase(), "durability": parseInt(durability), "miningSpeed": { "*": parseFloat(miningSpeed) }, "attackPower": parseFloat(attackPower), "toolTier": parseInt(tier), "creativeinventory": { "tools": ["*"] }, "texture": { "base": texture !== "none" ? `item/${path.basename(texture, '.png')}` : "game:item/unknown" } };
+            return JSON.stringify(json, null, 2) + '|||item|||';
+        };
+
+        Blockly.Blocks['vs_new_weapon'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Neue Waffe").appendField(new Blockly.FieldTextInput("myweapon", validateName), "NAME");
+                this.appendDummyInput().appendField("Typ").appendField(new Blockly.FieldDropdown([["Schwert","Sword"],["Speer","Spear"],["Axt","Axe"],["Messer","Knife"],["Keule","Club"],["Bogen","Bow"]]), "WEAPON_TYPE");
+                this.appendDummyInput().appendField("Textur").appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.appendDummyInput().appendField("Schaden").appendField(new Blockly.FieldNumber(5.0, 0.5, 100, 0.5), "DAMAGE");
+                this.appendDummyInput().appendField("Reichweite").appendField(new Blockly.FieldNumber(1.5, 0.5, 10, 0.1), "REACH");
+                this.appendDummyInput().appendField("Haltbarkeit").appendField(new Blockly.FieldNumber(300, 1, 10000), "DURABILITY");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(285);
+            }
+        };
+        Blockly.JavaScript['vs_new_weapon'] = function(block) {
+            var name = block.getFieldValue('NAME'), weaponType = block.getFieldValue('WEAPON_TYPE'), texture = block.getFieldValue('TEXTURE');
+            var damage = block.getFieldValue('DAMAGE'), reach = block.getFieldValue('REACH'), durability = block.getFieldValue('DURABILITY');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "ItemSword", "tool": weaponType.toLowerCase(), "durability": parseInt(durability), "attackPower": parseFloat(damage), "attackRange": parseFloat(reach), "creativeinventory": { "tools": ["*"] }, "texture": { "base": texture !== "none" ? `item/${path.basename(texture, '.png')}` : "game:item/unknown" } };
+            return JSON.stringify(json, null, 2) + '|||item|||';
+        };
+
+        Blockly.Blocks['vs_new_armor'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Neue Rüstung").appendField(new Blockly.FieldTextInput("myarmor", validateName), "NAME");
+                this.appendDummyInput().appendField("Slot").appendField(new Blockly.FieldDropdown([["Kopf","head"],["Körper","body"],["Beine","legs"],["Füße","feet"]]), "SLOT");
+                this.appendDummyInput().appendField("Textur").appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.appendDummyInput().appendField("Schutz (%)").appendField(new Blockly.FieldNumber(15, 1, 100), "PROTECTION");
+                this.appendDummyInput().appendField("Haltbarkeit").appendField(new Blockly.FieldNumber(500, 1, 10000), "DURABILITY");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(285);
+            }
+        };
+        Blockly.JavaScript['vs_new_armor'] = function(block) {
+            var name = block.getFieldValue('NAME'), slot = block.getFieldValue('SLOT'), texture = block.getFieldValue('TEXTURE');
+            var protection = block.getFieldValue('PROTECTION'), durability = block.getFieldValue('DURABILITY');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "ItemWearable", "clothingType": slot, "durability": parseInt(durability), "protectionModifiers": { "flatDamageReduction": parseFloat(protection) / 100, "relativeProtection": parseFloat(protection) / 100 }, "creativeinventory": { "general": ["*"] }, "texture": { "base": texture !== "none" ? `item/${path.basename(texture, '.png')}` : "game:item/unknown" } };
+            return JSON.stringify(json, null, 2) + '|||item|||';
+        };
+
+        Blockly.Blocks['vs_item_durability'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Haltbarkeit für").appendField(new Blockly.FieldDropdown(this.getItemOptions.bind(this)), "ITEM");
+                this.appendDummyInput().appendField("Wert").appendField(new Blockly.FieldNumber(100, 1, 99999), "VALUE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(285);
+            },
+            getItemOptions: function() { return [["Kein Item definiert", "none"]]; }
+        };
+        Blockly.JavaScript['vs_item_durability'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_tool_mining_speed'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Abbaugeschwindigkeit");
+                this.appendDummyInput().appendField("Material").appendField(new Blockly.FieldDropdown([["Stein","stone"],["Holz","wood"],["Erz","ore"],["Erde","soil"],["Alle","*"]]), "MATERIAL");
+                this.appendDummyInput().appendField("Geschwindigkeit").appendField(new Blockly.FieldNumber(4.0, 0.1, 50, 0.1), "SPEED");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(285);
+            }
+        };
+        Blockly.JavaScript['vs_tool_mining_speed'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_tool_tier'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Werkzeugstufe definieren").appendField(new Blockly.FieldTextInput("mytier", validateName), "NAME");
+                this.appendDummyInput().appendField("Stufe").appendField(new Blockly.FieldNumber(1, 0, 10), "LEVEL");
+                this.appendDummyInput().appendField("Abbaubar").appendField(new Blockly.FieldTextInput("stone,ore", validatePattern), "MINEABLE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(285);
+            }
+        };
+        Blockly.JavaScript['vs_tool_tier'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_item_stack_size'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Stapelgröße ändern");
+                this.appendDummyInput().appendField("Item").appendField(new Blockly.FieldTextInput("game:stick", validateCode), "ITEM");
+                this.appendDummyInput().appendField("Größe").appendField(new Blockly.FieldNumber(64, 1, 9999), "SIZE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(285);
+            }
+        };
+        Blockly.JavaScript['vs_item_stack_size'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_item_attributes'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Item Attribute").appendField(new Blockly.FieldTextInput("myitem", validateName), "ITEM");
+                this.appendDummyInput().appendField("Attribut").appendField(new Blockly.FieldTextInput("customValue", validateName), "ATTR_NAME");
+                this.appendDummyInput().appendField("Wert").appendField(new Blockly.FieldTextInput("100", validateText), "ATTR_VALUE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(285);
+            }
+        };
+        Blockly.JavaScript['vs_item_attributes'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_throwable_item'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Werfbares Item").appendField(new Blockly.FieldTextInput("mythrowable", validateName), "NAME");
+                this.appendDummyInput().appendField("Textur").appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.appendDummyInput().appendField("Schaden").appendField(new Blockly.FieldNumber(3.0, 0, 50, 0.5), "DAMAGE");
+                this.appendDummyInput().appendField("Wurfweite").appendField(new Blockly.FieldNumber(20, 1, 100), "RANGE");
+                this.appendDummyInput().appendField("Stapelgröße").appendField(new Blockly.FieldNumber(16, 1, 64), "STACK");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(285);
+            }
+        };
+        Blockly.JavaScript['vs_throwable_item'] = function(block) {
+            var name = block.getFieldValue('NAME'), texture = block.getFieldValue('TEXTURE'), damage = block.getFieldValue('DAMAGE'), range = block.getFieldValue('RANGE'), stack = block.getFieldValue('STACK');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "ItemStone", "maxstacksize": parseInt(stack), "attackPower": parseFloat(damage), "attributes": { "throwRange": parseInt(range) }, "creativeinventory": { "general": ["*"] }, "texture": { "base": texture !== "none" ? `item/${path.basename(texture, '.png')}` : "game:item/unknown" } };
+            return JSON.stringify(json, null, 2) + '|||item|||';
+        };
+
+        // ========== ENTITIES & KREATUREN ==========
+        Blockly.Blocks['vs_new_entity'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Neue Kreatur").appendField(new Blockly.FieldTextInput("mycreature", validateName), "NAME");
+                this.appendDummyInput().appendField("Typ").appendField(new Blockly.FieldDropdown([["Tier","Creature"],["Monster","Monster"],["NPC","Humanoid"],["Passiv","PassiveCreature"]]), "TYPE");
+                this.appendDummyInput().appendField("HP").appendField(new Blockly.FieldNumber(20, 1, 1000), "HEALTH");
+                this.appendDummyInput().appendField("Geschwindigkeit").appendField(new Blockly.FieldNumber(0.03, 0.001, 1, 0.001), "SPEED");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
+            }
+        };
+        Blockly.JavaScript['vs_new_entity'] = function(block) {
+            var name = block.getFieldValue('NAME'), type = block.getFieldValue('TYPE'), health = block.getFieldValue('HEALTH'), speed = block.getFieldValue('SPEED');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": type, "hitboxSize": { "x": 0.5, "y": 1 }, "deadHitboxSize": { "x": 0.5, "y": 0.25 }, "eyeHeight": 0.9, "attributes": { "health": parseInt(health), "walkSpeed": parseFloat(speed) }, "client": { "renderer": "Shape", "shape": { "base": `entity/${name}` } }, "server": { "behaviors": [{ "code": "health", "attributes": { "maxhealth": parseInt(health) } }] } };
+            return JSON.stringify(json, null, 2) + '|||entity|||';
+        };
+
+        Blockly.Blocks['vs_entity_ai'] = {
+            init: function() {
+                this.appendDummyInput().appendField("KI für Kreatur").appendField(new Blockly.FieldTextInput("mycreature", validateName), "ENTITY");
+                this.appendDummyInput().appendField("Verhalten").appendField(new Blockly.FieldDropdown([["Passiv","idle"],["Aggressiv","meleeattack"],["Fliehen","fleeondamage"],["Wandern","wander"],["Folgen","followentity"],["Schwimmen","float"]]), "BEHAVIOR");
+                this.appendDummyInput().appendField("Priorität").appendField(new Blockly.FieldNumber(1, 0, 10), "PRIORITY");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
+            }
+        };
+        Blockly.JavaScript['vs_entity_ai'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_entity_stats'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Statistiken für").appendField(new Blockly.FieldTextInput("mycreature", validateName), "ENTITY");
+                this.appendDummyInput().appendField("HP").appendField(new Blockly.FieldNumber(20, 1, 1000), "HEALTH");
+                this.appendDummyInput().appendField("Schaden").appendField(new Blockly.FieldNumber(3, 0, 100), "DAMAGE");
+                this.appendDummyInput().appendField("Rüstung").appendField(new Blockly.FieldNumber(0, 0, 100), "ARMOR");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
+            }
+        };
+        Blockly.JavaScript['vs_entity_stats'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_entity_drops'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Drops für").appendField(new Blockly.FieldTextInput("mycreature", validateName), "ENTITY");
+                this.appendDummyInput().appendField("Item").appendField(new Blockly.FieldTextInput("game:meat-raw", validateCode), "DROP_ITEM");
+                this.appendDummyInput().appendField("Menge (min)").appendField(new Blockly.FieldNumber(1, 0, 64), "MIN");
+                this.appendDummyInput().appendField("Menge (max)").appendField(new Blockly.FieldNumber(3, 0, 64), "MAX");
+                this.appendDummyInput().appendField("Chance (%)").appendField(new Blockly.FieldNumber(100, 0, 100), "CHANCE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
+            }
+        };
+        Blockly.JavaScript['vs_entity_drops'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_entity_spawn'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Spawn für").appendField(new Blockly.FieldTextInput("mycreature", validateName), "ENTITY");
+                this.appendDummyInput().appendField("Biom").appendField(new Blockly.FieldDropdown([["Überall","*"],["Wald","forest"],["Ebene","plain"],["Wüste","desert"],["Schnee","arctic"],["Sumpf","swamp"]]), "BIOME");
+                this.appendDummyInput().appendField("Gruppengröße").appendField(new Blockly.FieldNumber(3, 1, 20), "GROUP_SIZE");
+                this.appendDummyInput().appendField("Gewichtung").appendField(new Blockly.FieldNumber(1, 0.1, 10, 0.1), "WEIGHT");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
+            }
+        };
+        Blockly.JavaScript['vs_entity_spawn'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_entity_animation'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Animation für").appendField(new Blockly.FieldTextInput("mycreature", validateName), "ENTITY");
+                this.appendDummyInput().appendField("Animation").appendField(new Blockly.FieldDropdown([["Idle","idle"],["Laufen","walk"],["Rennen","run"],["Angriff","attack"],["Tod","die"],["Schwimmen","swim"]]), "ANIM_TYPE");
+                this.appendDummyInput().appendField("Datei").appendField(new Blockly.FieldTextInput("walk", validateName), "ANIM_FILE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
+            }
+        };
+        Blockly.JavaScript['vs_entity_animation'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_entity_sounds'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Sound für").appendField(new Blockly.FieldTextInput("mycreature", validateName), "ENTITY");
+                this.appendDummyInput().appendField("Ereignis").appendField(new Blockly.FieldDropdown([["Idle","idle"],["Verletzt","hurt"],["Tod","death"],["Angriff","attack"]]), "EVENT");
+                this.appendDummyInput().appendField("Sound").appendField(new Blockly.FieldTextInput("game:creature/wolf-idle", validateCode), "SOUND");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
+            }
+        };
+        Blockly.JavaScript['vs_entity_sounds'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_entity_taming'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Zähmbar").appendField(new Blockly.FieldTextInput("mycreature", validateName), "ENTITY");
+                this.appendDummyInput().appendField("Futter").appendField(new Blockly.FieldTextInput("game:grain-wheat", validateCode), "FOOD");
+                this.appendDummyInput().appendField("Zähmzeit (Tage)").appendField(new Blockly.FieldNumber(3, 1, 30), "DAYS");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
+            }
+        };
+        Blockly.JavaScript['vs_entity_taming'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_entity_breeding'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Zucht für").appendField(new Blockly.FieldTextInput("mycreature", validateName), "ENTITY");
+                this.appendDummyInput().appendField("Nachwuchs").appendField(new Blockly.FieldTextInput("mycreature-baby", validateName), "OFFSPRING");
+                this.appendDummyInput().appendField("Tragezeit (Tage)").appendField(new Blockly.FieldNumber(5, 1, 60), "GESTATION");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
+            }
+        };
+        Blockly.JavaScript['vs_entity_breeding'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_entity_mount'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Reitbar").appendField(new Blockly.FieldTextInput("mycreature", validateName), "ENTITY");
+                this.appendDummyInput().appendField("Geschwindigkeit").appendField(new Blockly.FieldNumber(0.1, 0.01, 1, 0.01), "SPEED");
+                this.appendDummyInput().appendField("Sprunghöhe").appendField(new Blockly.FieldNumber(1.5, 0.5, 5, 0.5), "JUMP");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
+            }
+        };
+        Blockly.JavaScript['vs_entity_mount'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_npc_trader'] = {
+            init: function() {
+                this.appendDummyInput().appendField("NPC Händler").appendField(new Blockly.FieldTextInput("mytrader", validateName), "NAME");
+                this.appendDummyInput().appendField("Verkauft").appendField(new Blockly.FieldTextInput("game:sword-iron", validateCode), "SELLS");
+                this.appendDummyInput().appendField("Preis").appendField(new Blockly.FieldNumber(10, 1, 9999), "PRICE");
+                this.appendDummyInput().appendField("Währung").appendField(new Blockly.FieldTextInput("game:gear-rusty", validateCode), "CURRENCY");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
+            }
+        };
+        Blockly.JavaScript['vs_npc_trader'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_boss_entity'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Boss Kreatur").appendField(new Blockly.FieldTextInput("myboss", validateName), "NAME");
+                this.appendDummyInput().appendField("HP").appendField(new Blockly.FieldNumber(500, 1, 99999), "HEALTH");
+                this.appendDummyInput().appendField("Phasen").appendField(new Blockly.FieldNumber(3, 1, 10), "PHASES");
+                this.appendDummyInput().appendField("Schaden").appendField(new Blockly.FieldNumber(15, 1, 999), "DAMAGE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
+            }
+        };
+        Blockly.JavaScript['vs_boss_entity'] = function(block) { return ''; };
+
+        // ========== WELTGENERIERUNG ==========
+        Blockly.Blocks['vs_ore_deposit'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Erzvorkommen").appendField(new Blockly.FieldTextInput("myore", validateName), "NAME");
+                this.appendDummyInput().appendField("Block").appendField(new Blockly.FieldTextInput("game:ore-iron", validateCode), "BLOCK");
+                this.appendDummyInput().appendField("Min. Höhe").appendField(new Blockly.FieldNumber(1, 0, 256), "MIN_Y");
+                this.appendDummyInput().appendField("Max. Höhe").appendField(new Blockly.FieldNumber(64, 0, 256), "MAX_Y");
+                this.appendDummyInput().appendField("Häufigkeit").appendField(new Blockly.FieldNumber(5, 1, 100), "FREQUENCY");
+                this.appendDummyInput().appendField("Größe").appendField(new Blockly.FieldNumber(8, 1, 64), "SIZE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
+            }
+        };
+        Blockly.JavaScript['vs_ore_deposit'] = function(block) {
+            var json = { "code": `${modConfig.modName}:${block.getFieldValue('NAME')}`, "variant": { "type": "deposit" }, "deposits": [{ "block": block.getFieldValue('BLOCK'), "minY": parseInt(block.getFieldValue('MIN_Y')), "maxY": parseInt(block.getFieldValue('MAX_Y')), "frequency": parseInt(block.getFieldValue('FREQUENCY')), "quantity": parseInt(block.getFieldValue('SIZE')) }] };
+            return JSON.stringify(json, null, 2) + '|||worldgen|||';
+        };
+
+        Blockly.Blocks['vs_structure_gen'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Struktur").appendField(new Blockly.FieldTextInput("mystructure", validateName), "NAME");
+                this.appendDummyInput().appendField("Häufigkeit").appendField(new Blockly.FieldNumber(1, 0.1, 100, 0.1), "FREQUENCY");
+                this.appendDummyInput().appendField("Biom").appendField(new Blockly.FieldDropdown([["Überall","*"],["Wald","forest"],["Ebene","plain"],["Wüste","desert"]]), "BIOME");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
+            }
+        };
+        Blockly.JavaScript['vs_structure_gen'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_biome_modifier'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Biom Modifikator");
+                this.appendDummyInput().appendField("Biom").appendField(new Blockly.FieldDropdown([["Wald","forest"],["Ebene","plain"],["Wüste","desert"],["Schnee","arctic"],["Sumpf","swamp"]]), "BIOME");
+                this.appendDummyInput().appendField("Temperatur").appendField(new Blockly.FieldNumber(15, -50, 50), "TEMP");
+                this.appendDummyInput().appendField("Feuchtigkeit").appendField(new Blockly.FieldNumber(50, 0, 100), "HUMIDITY");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
+            }
+        };
+        Blockly.JavaScript['vs_biome_modifier'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_tree_type'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Baumtyp").appendField(new Blockly.FieldTextInput("mytree", validateName), "NAME");
+                this.appendDummyInput().appendField("Holzblock").appendField(new Blockly.FieldTextInput("game:log-oak", validateCode), "LOG");
+                this.appendDummyInput().appendField("Blätterblock").appendField(new Blockly.FieldTextInput("game:leaves-oak", validateCode), "LEAVES");
+                this.appendDummyInput().appendField("Max. Höhe").appendField(new Blockly.FieldNumber(12, 3, 50), "HEIGHT");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
+            }
+        };
+        Blockly.JavaScript['vs_tree_type'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_cave_decorator'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Höhlen-Dekoration").appendField(new Blockly.FieldTextInput("mycavedeco", validateName), "NAME");
+                this.appendDummyInput().appendField("Block").appendField(new Blockly.FieldTextInput("game:stalactite", validateCode), "BLOCK");
+                this.appendDummyInput().appendField("Häufigkeit (%)").appendField(new Blockly.FieldNumber(5, 1, 100), "FREQUENCY");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
+            }
+        };
+        Blockly.JavaScript['vs_cave_decorator'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_surface_deposit'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Oberflächenressource").appendField(new Blockly.FieldTextInput("mysurfaceore", validateName), "NAME");
+                this.appendDummyInput().appendField("Block").appendField(new Blockly.FieldTextInput("game:loosestones-flint", validateCode), "BLOCK");
+                this.appendDummyInput().appendField("Häufigkeit").appendField(new Blockly.FieldNumber(3, 0.1, 100, 0.1), "FREQUENCY");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
+            }
+        };
+        Blockly.JavaScript['vs_surface_deposit'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_ruins_generator'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Ruinen Generator").appendField(new Blockly.FieldTextInput("myruins", validateName), "NAME");
+                this.appendDummyInput().appendField("Größe").appendField(new Blockly.FieldDropdown([["Klein","small"],["Mittel","medium"],["Groß","large"]]), "SIZE");
+                this.appendDummyInput().appendField("Häufigkeit").appendField(new Blockly.FieldNumber(0.5, 0.1, 10, 0.1), "FREQUENCY");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
+            }
+        };
+        Blockly.JavaScript['vs_ruins_generator'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_dungeon_gen'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Dungeon Generator").appendField(new Blockly.FieldTextInput("mydungeon", validateName), "NAME");
+                this.appendDummyInput().appendField("Tiefe").appendField(new Blockly.FieldNumber(20, 1, 100), "DEPTH");
+                this.appendDummyInput().appendField("Räume").appendField(new Blockly.FieldNumber(5, 1, 50), "ROOMS");
+                this.appendDummyInput().appendField("Loot-Tabelle").appendField(new Blockly.FieldTextInput("dungeon-loot", validateName), "LOOT");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
+            }
+        };
+        Blockly.JavaScript['vs_dungeon_gen'] = function(block) { return ''; };
+
+        // ========== CRAFTING & VERARBEITUNG ==========
+        Blockly.Blocks['vs_grid_recipe'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Grid Rezept").appendField(new Blockly.FieldTextInput("myrecipe", validateName), "NAME");
+                this.appendDummyInput().appendField("Muster (3x3)").appendField(new Blockly.FieldTextInput("AAA,ABA,AAA", validatePattern), "PATTERN");
+                this.appendDummyInput().appendField("A =").appendField(new Blockly.FieldTextInput("game:plank-oak", validateCode), "ING_A");
+                this.appendDummyInput().appendField("B =").appendField(new Blockly.FieldTextInput("game:stick", validateCode), "ING_B");
+                this.appendDummyInput().appendField("Ergebnis").appendField(new Blockly.FieldTextInput("game:chest", validateCode), "OUTPUT");
+                this.appendDummyInput().appendField("Menge").appendField(new Blockly.FieldNumber(1, 1, 64), "QUANTITY");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
+            }
+        };
+        Blockly.JavaScript['vs_grid_recipe'] = function(block) {
+            var pattern = block.getFieldValue('PATTERN'), ingA = block.getFieldValue('ING_A'), ingB = block.getFieldValue('ING_B'), output = block.getFieldValue('OUTPUT'), qty = block.getFieldValue('QUANTITY');
+            var json = { "ingredientPattern": pattern, "ingredients": { "A": { "type": "item", "code": ingA }, "B": { "type": "item", "code": ingB } }, "output": { "type": "item", "code": output, "quantity": parseInt(qty) } };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
+
+        Blockly.Blocks['vs_barrel_recipe'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Fass-Rezept").appendField(new Blockly.FieldTextInput("mybarrel", validateName), "NAME");
+                this.appendDummyInput().appendField("Eingabe").appendField(new Blockly.FieldTextInput("game:fruit-apple", validateCode), "INPUT");
+                this.appendDummyInput().appendField("Flüssigkeit").appendField(new Blockly.FieldTextInput("game:water", validateCode), "LIQUID");
+                this.appendDummyInput().appendField("Ergebnis").appendField(new Blockly.FieldTextInput("game:cider", validateCode), "OUTPUT");
+                this.appendDummyInput().appendField("Dauer (Stunden)").appendField(new Blockly.FieldNumber(24, 1, 720), "DURATION");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
+            }
+        };
+        Blockly.JavaScript['vs_barrel_recipe'] = function(block) {
+            var json = { "code": `${modConfig.modName}:barrel-${block.getFieldValue('NAME')}`, "input": block.getFieldValue('INPUT'), "liquid": block.getFieldValue('LIQUID'), "output": block.getFieldValue('OUTPUT'), "sealHours": parseInt(block.getFieldValue('DURATION')) };
+            return JSON.stringify(json, null, 2) + '|||barrelrecipe|||';
+        };
+
+        Blockly.Blocks['vs_clay_forming'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Tonformen").appendField(new Blockly.FieldTextInput("myclayform", validateName), "NAME");
+                this.appendDummyInput().appendField("Ergebnis").appendField(new Blockly.FieldTextInput("game:bowl-raw", validateCode), "OUTPUT");
+                this.appendDummyInput().appendField("Ton benötigt").appendField(new Blockly.FieldNumber(2, 1, 16), "CLAY_AMOUNT");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
+            }
+        };
+        Blockly.JavaScript['vs_clay_forming'] = function(block) {
+            var json = { "code": `${modConfig.modName}:clayform-${block.getFieldValue('NAME')}`, "output": block.getFieldValue('OUTPUT'), "clayRequired": parseInt(block.getFieldValue('CLAY_AMOUNT')) };
+            return JSON.stringify(json, null, 2) + '|||clayforming|||';
+        };
+
+        Blockly.Blocks['vs_smithing_recipe'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Schmiedeamboss").appendField(new Blockly.FieldTextInput("mysmith", validateName), "NAME");
+                this.appendDummyInput().appendField("Eingabe").appendField(new Blockly.FieldTextInput("game:ingot-iron", validateCode), "INPUT");
+                this.appendDummyInput().appendField("Eingabe Menge").appendField(new Blockly.FieldNumber(1, 1, 10), "INPUT_QTY");
+                this.appendDummyInput().appendField("Ergebnis").appendField(new Blockly.FieldTextInput("game:pickaxehead-iron", validateCode), "OUTPUT");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
+            }
+        };
+        Blockly.JavaScript['vs_smithing_recipe'] = function(block) {
+            var json = { "code": `${modConfig.modName}:smithing-${block.getFieldValue('NAME')}`, "ingredient": { "type": "item", "code": block.getFieldValue('INPUT'), "quantity": parseInt(block.getFieldValue('INPUT_QTY')) }, "output": { "type": "item", "code": block.getFieldValue('OUTPUT') } };
+            return JSON.stringify(json, null, 2) + '|||smithing|||';
+        };
+
+        Blockly.Blocks['vs_knapping_recipe'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Steinbearbeitung").appendField(new Blockly.FieldTextInput("myknap", validateName), "NAME");
+                this.appendDummyInput().appendField("Eingabe").appendField(new Blockly.FieldTextInput("game:stone-granite", validateCode), "INPUT");
+                this.appendDummyInput().appendField("Ergebnis").appendField(new Blockly.FieldTextInput("game:axehead-stone", validateCode), "OUTPUT");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
+            }
+        };
+        Blockly.JavaScript['vs_knapping_recipe'] = function(block) {
+            var json = { "code": `${modConfig.modName}:knapping-${block.getFieldValue('NAME')}`, "ingredient": block.getFieldValue('INPUT'), "output": block.getFieldValue('OUTPUT') };
+            return JSON.stringify(json, null, 2) + '|||knapping|||';
+        };
+
+        Blockly.Blocks['vs_cooking_recipe'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Kochrezept").appendField(new Blockly.FieldTextInput("mycooking", validateName), "NAME");
+                this.appendDummyInput().appendField("Zutaten").appendField(new Blockly.FieldTextInput("game:meat-raw,game:vegetable-carrot", validateText), "INGREDIENTS");
+                this.appendDummyInput().appendField("Ergebnis").appendField(new Blockly.FieldTextInput("game:meal-hearty", validateCode), "OUTPUT");
+                this.appendDummyInput().appendField("Kochzeit (Sek.)").appendField(new Blockly.FieldNumber(30, 1, 600), "TIME");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
+            }
+        };
+        Blockly.JavaScript['vs_cooking_recipe'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_alloy_recipe'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Legierung").appendField(new Blockly.FieldTextInput("myalloy", validateName), "NAME");
+                this.appendDummyInput().appendField("Metall 1").appendField(new Blockly.FieldTextInput("game:ingot-copper", validateCode), "METAL1");
+                this.appendDummyInput().appendField("Anteil 1 (%)").appendField(new Blockly.FieldNumber(90, 1, 99), "RATIO1");
+                this.appendDummyInput().appendField("Metall 2").appendField(new Blockly.FieldTextInput("game:ingot-tin", validateCode), "METAL2");
+                this.appendDummyInput().appendField("Ergebnis").appendField(new Blockly.FieldTextInput("game:ingot-bronze", validateCode), "OUTPUT");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
+            }
+        };
+        Blockly.JavaScript['vs_alloy_recipe'] = function(block) {
+            var json = { "code": `${modConfig.modName}:alloy-${block.getFieldValue('NAME')}`, "ingredients": [{ "code": block.getFieldValue('METAL1'), "ratio": parseInt(block.getFieldValue('RATIO1')) }, { "code": block.getFieldValue('METAL2'), "ratio": 100 - parseInt(block.getFieldValue('RATIO1')) }], "output": block.getFieldValue('OUTPUT') };
+            return JSON.stringify(json, null, 2) + '|||alloy|||';
+        };
+
+        Blockly.Blocks['vs_fuel_type'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Brennstoff").appendField(new Blockly.FieldTextInput("myfuel", validateName), "NAME");
+                this.appendDummyInput().appendField("Item").appendField(new Blockly.FieldTextInput("game:firewood", validateCode), "ITEM");
+                this.appendDummyInput().appendField("Brenndauer (Sek.)").appendField(new Blockly.FieldNumber(60, 1, 3600), "DURATION");
+                this.appendDummyInput().appendField("Temperatur").appendField(new Blockly.FieldNumber(800, 100, 2000), "TEMP");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
+            }
+        };
+        Blockly.JavaScript['vs_fuel_type'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_drying_recipe'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Trocknungsrezept").appendField(new Blockly.FieldTextInput("mydrying", validateName), "NAME");
+                this.appendDummyInput().appendField("Eingabe").appendField(new Blockly.FieldTextInput("game:meat-raw", validateCode), "INPUT");
+                this.appendDummyInput().appendField("Ergebnis").appendField(new Blockly.FieldTextInput("game:meat-dried", validateCode), "OUTPUT");
+                this.appendDummyInput().appendField("Dauer (Tage)").appendField(new Blockly.FieldNumber(3, 1, 30), "DAYS");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
+            }
+        };
+        Blockly.JavaScript['vs_drying_recipe'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_grinding_recipe'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Mahlstein-Rezept").appendField(new Blockly.FieldTextInput("mygrinding", validateName), "NAME");
+                this.appendDummyInput().appendField("Eingabe").appendField(new Blockly.FieldTextInput("game:grain-wheat", validateCode), "INPUT");
+                this.appendDummyInput().appendField("Ergebnis").appendField(new Blockly.FieldTextInput("game:flour-wheat", validateCode), "OUTPUT");
+                this.appendDummyInput().appendField("Menge").appendField(new Blockly.FieldNumber(1, 1, 16), "QUANTITY");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
+            }
+        };
+        Blockly.JavaScript['vs_grinding_recipe'] = function(block) { return ''; };
+
+        // ========== SOUNDS & PARTIKEL ==========
+        Blockly.Blocks['vs_custom_sound'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Eigener Sound").appendField(new Blockly.FieldTextInput("mysound", validateName), "NAME");
+                this.appendDummyInput().appendField("Lautstärke").appendField(new Blockly.FieldNumber(1.0, 0.1, 2, 0.1), "VOLUME");
+                this.appendDummyInput().appendField("Reichweite").appendField(new Blockly.FieldNumber(16, 1, 64), "RANGE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
+            }
+        };
+        Blockly.JavaScript['vs_custom_sound'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_ambient_sound'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Umgebungssound").appendField(new Blockly.FieldTextInput("myambient", validateName), "NAME");
+                this.appendDummyInput().appendField("Sound").appendField(new Blockly.FieldTextInput("game:environment/wind", validateCode), "SOUND");
+                this.appendDummyInput().appendField("Intervall (Sek.)").appendField(new Blockly.FieldNumber(30, 1, 600), "INTERVAL");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
+            }
+        };
+        Blockly.JavaScript['vs_ambient_sound'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_particle_effect'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Partikeleffekt").appendField(new Blockly.FieldTextInput("myparticle", validateName), "NAME");
+                this.appendDummyInput().appendField("Typ").appendField(new Blockly.FieldDropdown([["Rauch","smoke"],["Feuer","fire"],["Funken","spark"],["Staub","dust"],["Wasser","water"],["Magie","magic"]]), "TYPE");
+                this.appendDummyInput().appendField("Menge").appendField(new Blockly.FieldNumber(10, 1, 100), "QUANTITY");
+                this.appendDummyInput().appendField("Lebensdauer (Sek.)").appendField(new Blockly.FieldNumber(2, 0.1, 30, 0.1), "LIFETIME");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
+            }
+        };
+        Blockly.JavaScript['vs_particle_effect'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_block_particles'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Block-Partikel").appendField(new Blockly.FieldTextInput("myblock", validateName), "BLOCK");
+                this.appendDummyInput().appendField("Partikel").appendField(new Blockly.FieldDropdown([["Rauch","smoke"],["Funken","spark"],["Staub","dust"]]), "PARTICLE");
+                this.appendDummyInput().appendField("Rate").appendField(new Blockly.FieldNumber(1, 0.1, 10, 0.1), "RATE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
+            }
+        };
+        Blockly.JavaScript['vs_block_particles'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_weather_particles'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Wetter-Partikel");
+                this.appendDummyInput().appendField("Typ").appendField(new Blockly.FieldDropdown([["Regen","rain"],["Schnee","snow"],["Nebel","fog"],["Gewitter","thunder"]]), "TYPE");
+                this.appendDummyInput().appendField("Intensität").appendField(new Blockly.FieldNumber(1, 0.1, 5, 0.1), "INTENSITY");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
+            }
+        };
+        Blockly.JavaScript['vs_weather_particles'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_footstep_sound'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Schrittgeräusch für Block").appendField(new Blockly.FieldTextInput("myblock", validateName), "BLOCK");
+                this.appendDummyInput().appendField("Sound").appendField(new Blockly.FieldDropdown([["Holz","wood"],["Stein","stone"],["Gras","grass"],["Metall","metal"],["Sand","sand"],["Kies","gravel"]]), "SOUND");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
+            }
+        };
+        Blockly.JavaScript['vs_footstep_sound'] = function(block) { return ''; };
+
+        // ========== GUI & HUD ==========
+        Blockly.Blocks['vs_custom_gui'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Eigene GUI").appendField(new Blockly.FieldTextInput("mygui", validateName), "NAME");
+                this.appendDummyInput().appendField("Breite").appendField(new Blockly.FieldNumber(400, 100, 1000), "WIDTH");
+                this.appendDummyInput().appendField("Höhe").appendField(new Blockly.FieldNumber(300, 100, 800), "HEIGHT");
+                this.appendDummyInput().appendField("Titel").appendField(new Blockly.FieldTextInput("Mein Dialog", validateText), "TITLE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
+            }
+        };
+        Blockly.JavaScript['vs_custom_gui'] = function(block) {
+            var name = block.getFieldValue('NAME'), width = block.getFieldValue('WIDTH'), height = block.getFieldValue('HEIGHT'), title = block.getFieldValue('TITLE');
+            var csharp = `
+using Vintagestory.API.Client;
+namespace ${modConfig.modName} {
+    public class GuiDialog${name} : GuiDialog {
+        public override string ToggleKeyCombinationCode => "${name}_dialog";
+        public GuiDialog${name}(ICoreClientAPI capi) : base(capi) { SetupDialog(); }
+        private void SetupDialog() {
+            ElementBounds dialogBounds = ElementStdBounds.AutosizedMainDialog.WithAlignment(EnumDialogArea.CenterMiddle).WithFixedSize(${width}, ${height});
+            ElementBounds bgBounds = ElementBounds.Fill.WithFixedPadding(10);
+            SingleComposer = capi.Gui.CreateCompo("${name}_dialog", dialogBounds)
+                .AddShadedDialogBG(bgBounds).AddDialogTitleBar("${title}", OnTitleBarClose).Compose();
+        }
+        private void OnTitleBarClose() { TryClose(); }
+    }
+}`;
+            return 'csharp:GuiDialog' + name + ':' + csharp + '|||';
+        };
+
+        Blockly.Blocks['vs_hud_element'] = {
+            init: function() {
+                this.appendDummyInput().appendField("HUD Element").appendField(new Blockly.FieldTextInput("myhud", validateName), "NAME");
+                this.appendDummyInput().appendField("Position X").appendField(new Blockly.FieldNumber(10, 0, 1920), "X");
+                this.appendDummyInput().appendField("Position Y").appendField(new Blockly.FieldNumber(10, 0, 1080), "Y");
+                this.appendDummyInput().appendField("Text").appendField(new Blockly.FieldTextInput("HUD Text", validateText), "TEXT");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
+            }
+        };
+        Blockly.JavaScript['vs_hud_element'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_progress_bar'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Fortschrittsbalken").appendField(new Blockly.FieldTextInput("mybar", validateName), "NAME");
+                this.appendDummyInput().appendField("Breite").appendField(new Blockly.FieldNumber(200, 50, 500), "WIDTH");
+                this.appendDummyInput().appendField("Höhe").appendField(new Blockly.FieldNumber(20, 10, 100), "HEIGHT");
+                this.appendDummyInput().appendField("Farbe").appendField(new Blockly.FieldDropdown([["Grün","green"],["Rot","red"],["Blau","blue"],["Gelb","yellow"]]), "COLOR");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
+            }
+        };
+        Blockly.JavaScript['vs_progress_bar'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_inventory_slots'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Inventar-Slots").appendField(new Blockly.FieldTextInput("myinv", validateName), "NAME");
+                this.appendDummyInput().appendField("Spalten").appendField(new Blockly.FieldNumber(9, 1, 20), "COLS");
+                this.appendDummyInput().appendField("Zeilen").appendField(new Blockly.FieldNumber(3, 1, 10), "ROWS");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
+            }
+        };
+        Blockly.JavaScript['vs_inventory_slots'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_button_element'] = {
+            init: function() {
+                this.appendDummyInput().appendField("GUI Button").appendField(new Blockly.FieldTextInput("mybutton", validateName), "NAME");
+                this.appendDummyInput().appendField("Text").appendField(new Blockly.FieldTextInput("Klick!", validateText), "TEXT");
+                this.appendDummyInput().appendField("Breite").appendField(new Blockly.FieldNumber(100, 30, 300), "WIDTH");
+                this.appendDummyInput().appendField("Aktion").appendField(new Blockly.FieldTextInput("ShowMessage", validateName), "ACTION");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
+            }
+        };
+        Blockly.JavaScript['vs_button_element'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_text_input'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Texteingabe").appendField(new Blockly.FieldTextInput("myinput", validateName), "NAME");
+                this.appendDummyInput().appendField("Platzhalter").appendField(new Blockly.FieldTextInput("Eingabe...", validateText), "PLACEHOLDER");
+                this.appendDummyInput().appendField("Breite").appendField(new Blockly.FieldNumber(200, 50, 500), "WIDTH");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
+            }
+        };
+        Blockly.JavaScript['vs_text_input'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_dropdown_menu'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Dropdown").appendField(new Blockly.FieldTextInput("mydropdown", validateName), "NAME");
+                this.appendDummyInput().appendField("Optionen").appendField(new Blockly.FieldTextInput("Option1,Option2,Option3", validateText), "OPTIONS");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
+            }
+        };
+        Blockly.JavaScript['vs_dropdown_menu'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_tooltip'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Tooltip für").appendField(new Blockly.FieldTextInput("myitem", validateName), "ITEM");
+                this.appendDummyInput().appendField("Text").appendField(new Blockly.FieldTextInput("Dies ist ein Tooltip", validateText), "TEXT");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
+            }
+        };
+        Blockly.JavaScript['vs_tooltip'] = function(block) { return ''; };
+
+        // ========== COMMANDS & EVENTS ==========
+        Blockly.Blocks['vs_chat_command'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Chat-Befehl").appendField(new Blockly.FieldTextInput("mycommand", validateName), "NAME");
+                this.appendDummyInput().appendField("Beschreibung").appendField(new Blockly.FieldTextInput("Mein Befehl", validateText), "DESC");
+                this.appendDummyInput().appendField("Berechtigung").appendField(new Blockly.FieldDropdown([["Alle","0"],["Moderator","50"],["Admin","100"]]), "PERMISSION");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
+            }
+        };
+        Blockly.JavaScript['vs_chat_command'] = function(block) {
+            var name = block.getFieldValue('NAME'), desc = block.getFieldValue('DESC'), perm = block.getFieldValue('PERMISSION');
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+namespace ${modConfig.modName} {
+    public class Command${name} : ModSystem {
+        public override void StartServerSide(ICoreServerAPI api) {
+            api.ChatCommands.Create("${name}").WithDescription("${desc}").RequiresPrivilege(Privilege.chat)
+                .HandleWith(args => { args.Caller.Player.SendMessage(0, "Befehl ${name} ausgeführt!", EnumChatType.Notification); return TextCommandResult.Success(); });
+        }
+    }
+}`;
+            return 'csharp:Command' + name + ':' + csharp + '|||';
+        };
+
+        Blockly.Blocks['vs_keybind'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Tastenbelegung").appendField(new Blockly.FieldTextInput("mykey", validateName), "NAME");
+                this.appendDummyInput().appendField("Taste").appendField(new Blockly.FieldDropdown([["F","F"],["G","G"],["H","H"],["J","J"],["K","K"],["L","L"],["R","R"],["T","T"],["Y","Y"],["U","U"]]), "KEY");
+                this.appendDummyInput().appendField("Beschreibung").appendField(new Blockly.FieldTextInput("Meine Taste", validateText), "DESC");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
+            }
+        };
+        Blockly.JavaScript['vs_keybind'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_on_player_join'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Wenn Spieler beitritt");
+                this.appendDummyInput().appendField("Nachricht").appendField(new Blockly.FieldTextInput("Willkommen!", validateText), "MESSAGE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
+            }
+        };
+        Blockly.JavaScript['vs_on_player_join'] = function(block) {
+            var message = block.getFieldValue('MESSAGE');
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+namespace ${modConfig.modName} {
+    public class PlayerJoinHandler : ModSystem {
+        public override void StartServerSide(ICoreServerAPI api) {
+            api.Event.PlayerJoin += (player) => { api.SendMessage(player, 0, "${message}", EnumChatType.Notification); };
+        }
+    }
+}`;
+            return 'csharp:PlayerJoinHandler:' + csharp + '|||';
+        };
+
+        Blockly.Blocks['vs_on_block_break'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Wenn Block abgebaut");
+                this.appendDummyInput().appendField("Block").appendField(new Blockly.FieldTextInput("game:stone", validateCode), "BLOCK");
+                this.appendDummyInput().appendField("Aktion").appendField(new Blockly.FieldTextInput("Stein abgebaut!", validateText), "ACTION");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
+            }
+        };
+        Blockly.JavaScript['vs_on_block_break'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_on_entity_death'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Wenn Entity stirbt");
+                this.appendDummyInput().appendField("Entity").appendField(new Blockly.FieldTextInput("game:wolf", validateCode), "ENTITY");
+                this.appendDummyInput().appendField("Aktion").appendField(new Blockly.FieldTextInput("Wolf getötet!", validateText), "ACTION");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
+            }
+        };
+        Blockly.JavaScript['vs_on_entity_death'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_on_item_use'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Wenn Item benutzt");
+                this.appendDummyInput().appendField("Item").appendField(new Blockly.FieldTextInput("game:stick", validateCode), "ITEM");
+                this.appendDummyInput().appendField("Aktion").appendField(new Blockly.FieldTextInput("Item benutzt!", validateText), "ACTION");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
+            }
+        };
+        Blockly.JavaScript['vs_on_item_use'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_timer_event'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Timer Event").appendField(new Blockly.FieldTextInput("mytimer", validateName), "NAME");
+                this.appendDummyInput().appendField("Intervall (ms)").appendField(new Blockly.FieldNumber(1000, 100, 60000), "INTERVAL");
+                this.appendDummyInput().appendField("Aktion").appendField(new Blockly.FieldTextInput("Timer tick!", validateText), "ACTION");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
+            }
+        };
+        Blockly.JavaScript['vs_timer_event'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_world_tick'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Welt-Tick Handler").appendField(new Blockly.FieldTextInput("myworldtick", validateName), "NAME");
+                this.appendDummyInput().appendField("Häufigkeit").appendField(new Blockly.FieldDropdown([["Jeden Tick","1"],["Alle 20 Ticks","20"],["Jede Sekunde","40"],["Alle 5 Sekunden","200"]]), "FREQUENCY");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
+            }
+        };
+        Blockly.JavaScript['vs_world_tick'] = function(block) { return ''; };
+
+        // ========== MECHANIKEN & SYSTEME ==========
+        Blockly.Blocks['vs_temperature_system'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Temperatur System").appendField(new Blockly.FieldTextInput("mytemp", validateName), "NAME");
+                this.appendDummyInput().appendField("Min. Temperatur").appendField(new Blockly.FieldNumber(-20, -100, 100), "MIN");
+                this.appendDummyInput().appendField("Max. Temperatur").appendField(new Blockly.FieldNumber(40, -100, 100), "MAX");
+                this.appendDummyInput().appendField("Schaden unter Min").appendField(new Blockly.FieldNumber(1, 0, 10, 0.5), "COLD_DAMAGE");
+                this.appendDummyInput().appendField("Schaden über Max").appendField(new Blockly.FieldNumber(1, 0, 10, 0.5), "HEAT_DAMAGE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
+            }
+        };
+        Blockly.JavaScript['vs_temperature_system'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_nutrition_type'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Nährwert Typ").appendField(new Blockly.FieldTextInput("mynutrition", validateName), "NAME");
+                this.appendDummyInput().appendField("Kategorie").appendField(new Blockly.FieldDropdown([["Protein","protein"],["Getreide","grain"],["Gemüse","vegetable"],["Obst","fruit"],["Milch","dairy"]]), "CATEGORY");
+                this.appendDummyInput().appendField("Sättigung").appendField(new Blockly.FieldNumber(100, 1, 1000), "SATURATION");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
+            }
+        };
+        Blockly.JavaScript['vs_nutrition_type'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_skill_system'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Fähigkeit").appendField(new Blockly.FieldTextInput("myskill", validateName), "NAME");
+                this.appendDummyInput().appendField("Max. Level").appendField(new Blockly.FieldNumber(100, 1, 1000), "MAX_LEVEL");
+                this.appendDummyInput().appendField("XP pro Level").appendField(new Blockly.FieldNumber(100, 10, 10000), "XP_PER_LEVEL");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
+            }
+        };
+        Blockly.JavaScript['vs_skill_system'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_experience_gain'] = {
+            init: function() {
+                this.appendDummyInput().appendField("XP Gewinn").appendField(new Blockly.FieldTextInput("myxp", validateName), "NAME");
+                this.appendDummyInput().appendField("Aktion").appendField(new Blockly.FieldDropdown([["Block abbauen","mine"],["Kreatur töten","kill"],["Item herstellen","craft"],["Entdecken","explore"]]), "ACTION");
+                this.appendDummyInput().appendField("XP Menge").appendField(new Blockly.FieldNumber(10, 1, 1000), "AMOUNT");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
+            }
+        };
+        Blockly.JavaScript['vs_experience_gain'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_status_effect'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Status Effekt").appendField(new Blockly.FieldTextInput("myeffect", validateName), "NAME");
+                this.appendDummyInput().appendField("Typ").appendField(new Blockly.FieldDropdown([["Buff","buff"],["Debuff","debuff"]]), "TYPE");
+                this.appendDummyInput().appendField("Dauer (Sek.)").appendField(new Blockly.FieldNumber(30, 1, 600), "DURATION");
+                this.appendDummyInput().appendField("Stärke").appendField(new Blockly.FieldNumber(1, 1, 10), "STRENGTH");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
+            }
+        };
+        Blockly.JavaScript['vs_status_effect'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_damage_type'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Schadenstyp").appendField(new Blockly.FieldTextInput("mydamage", validateName), "NAME");
+                this.appendDummyInput().appendField("Typ").appendField(new Blockly.FieldDropdown([["Physisch","physical"],["Feuer","fire"],["Frost","frost"],["Gift","poison"],["Magie","magic"],["Fall","fall"]]), "TYPE");
+                this.appendDummyInput().appendField("Basis Schaden").appendField(new Blockly.FieldNumber(5, 0.5, 100, 0.5), "DAMAGE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
+            }
+        };
+        Blockly.JavaScript['vs_damage_type'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_repair_system'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Reparatur System").appendField(new Blockly.FieldTextInput("myrepair", validateName), "NAME");
+                this.appendDummyInput().appendField("Item").appendField(new Blockly.FieldTextInput("game:pickaxe-iron", validateCode), "ITEM");
+                this.appendDummyInput().appendField("Material").appendField(new Blockly.FieldTextInput("game:ingot-iron", validateCode), "MATERIAL");
+                this.appendDummyInput().appendField("Reparatur %").appendField(new Blockly.FieldNumber(25, 1, 100), "REPAIR_PERCENT");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
+            }
+        };
+        Blockly.JavaScript['vs_repair_system'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_decay_system'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Verfall System").appendField(new Blockly.FieldTextInput("mydecay", validateName), "NAME");
+                this.appendDummyInput().appendField("Item").appendField(new Blockly.FieldTextInput("game:meat-raw", validateCode), "ITEM");
+                this.appendDummyInput().appendField("Verfallszeit (Tage)").appendField(new Blockly.FieldNumber(7, 1, 365), "DAYS");
+                this.appendDummyInput().appendField("Ergebnis").appendField(new Blockly.FieldTextInput("game:rot", validateCode), "RESULT");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
+            }
+        };
+        Blockly.JavaScript['vs_decay_system'] = function(block) { return ''; };
+
+        // ========== ERWEITERTE BLÖCKE ==========
+        Blockly.Blocks['vs_liquid_block'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Flüssigkeit").appendField(new Blockly.FieldTextInput("myliquid", validateName), "NAME");
+                this.appendDummyInput().appendField("Textur").appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.appendDummyInput().appendField("Fließgeschw.").appendField(new Blockly.FieldNumber(5, 1, 20), "FLOW_SPEED");
+                this.appendDummyInput().appendField("Viskosität").appendField(new Blockly.FieldNumber(1, 0.1, 10, 0.1), "VISCOSITY");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(120);
+            }
+        };
+        Blockly.JavaScript['vs_liquid_block'] = function(block) {
+            var name = block.getFieldValue('NAME'), texture = block.getFieldValue('TEXTURE');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "BlockLiquid", "drawtype": "Liquid", "replaceable": 6000, "liquidCode": name, "pushVector": { "x": 0, "y": -0.1, "z": 0 }, "texture": { "base": texture !== "none" ? `block/${path.basename(texture, '.png')}` : "game:block/water" } };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
+
+        Blockly.Blocks['vs_plant_block'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Pflanze").appendField(new Blockly.FieldTextInput("myplant", validateName), "NAME");
+                this.appendDummyInput().appendField("Textur").appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.appendDummyInput().appendField("Wachstumsstadien").appendField(new Blockly.FieldNumber(4, 1, 10), "STAGES");
+                this.appendDummyInput().appendField("Wachstumszeit (Tage)").appendField(new Blockly.FieldNumber(7, 1, 60), "GROWTH_DAYS");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(120);
+            }
+        };
+        Blockly.JavaScript['vs_plant_block'] = function(block) {
+            var name = block.getFieldValue('NAME'), texture = block.getFieldValue('TEXTURE'), stages = block.getFieldValue('STAGES');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "BlockPlant", "drawtype": "Cross", "renderPass": "OpaqueNoCull", "stages": parseInt(stages), "texture": { "base": texture !== "none" ? `block/${path.basename(texture, '.png')}` : "game:block/plant" } };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
+
+        Blockly.Blocks['vs_crop_block'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Feldfrucht").appendField(new Blockly.FieldTextInput("mycrop", validateName), "NAME");
+                this.appendDummyInput().appendField("Textur").appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.appendDummyInput().appendField("Ertrag").appendField(new Blockly.FieldTextInput("game:grain-wheat", validateCode), "YIELD");
+                this.appendDummyInput().appendField("Menge").appendField(new Blockly.FieldNumber(3, 1, 20), "YIELD_AMOUNT");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(120);
+            }
+        };
+        Blockly.JavaScript['vs_crop_block'] = function(block) { return ''; };
+
+        Blockly.Blocks['vs_door_block'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Tür").appendField(new Blockly.FieldTextInput("mydoor", validateName), "NAME");
+                this.appendDummyInput().appendField("Textur").appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.appendDummyInput().appendField("Material").appendField(new Blockly.FieldDropdown([["Holz","wood"],["Eisen","iron"],["Bronze","bronze"]]), "MATERIAL");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(120);
+            }
+        };
+        Blockly.JavaScript['vs_door_block'] = function(block) {
+            var name = block.getFieldValue('NAME'), texture = block.getFieldValue('TEXTURE');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "BlockDoor", "drawtype": "JSON", "behaviors": [{ "name": "Door" }], "texture": { "base": texture !== "none" ? `block/${path.basename(texture, '.png')}` : "game:block/door" } };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
+
+        Blockly.Blocks['vs_container_block'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Container").appendField(new Blockly.FieldTextInput("mycontainer", validateName), "NAME");
+                this.appendDummyInput().appendField("Textur").appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.appendDummyInput().appendField("Slots").appendField(new Blockly.FieldNumber(16, 1, 64), "SLOTS");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(120);
+            }
+        };
+        Blockly.JavaScript['vs_container_block'] = function(block) {
+            var name = block.getFieldValue('NAME'), texture = block.getFieldValue('TEXTURE'), slots = block.getFieldValue('SLOTS');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "BlockGenericTypedContainer", "entityClass": "GenericTypedContainer", "variantGroups": [{ "code": "type", "states": ["normal"] }], "attributes": { "inventoryClassName": name, "quantitySlots": parseInt(slots) }, "texture": { "base": texture !== "none" ? `block/${path.basename(texture, '.png')}` : "game:block/chest" } };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
+
+        Blockly.Blocks['vs_light_source'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Lichtquelle").appendField(new Blockly.FieldTextInput("mylight", validateName), "NAME");
+                this.appendDummyInput().appendField("Textur").appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.appendDummyInput().appendField("Lichtstärke").appendField(new Blockly.FieldNumber(15, 1, 32), "LIGHT_LEVEL");
+                this.appendDummyInput().appendField("Farbe").appendField(new Blockly.FieldDropdown([["Weiß","white"],["Gelb","yellow"],["Orange","orange"],["Rot","red"],["Blau","blue"],["Grün","green"]]), "COLOR");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(120);
+            }
+        };
+        Blockly.JavaScript['vs_light_source'] = function(block) {
+            var name = block.getFieldValue('NAME'), texture = block.getFieldValue('TEXTURE'), lightLevel = block.getFieldValue('LIGHT_LEVEL');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "Block", "lightHsv": [parseInt(lightLevel), 0, parseInt(lightLevel)], "texture": { "base": texture !== "none" ? `block/${path.basename(texture, '.png')}` : "game:block/torch" } };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
+
+        Blockly.Blocks['vs_rotatable_block'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Drehbarer Block").appendField(new Blockly.FieldTextInput("myrotatable", validateName), "NAME");
+                this.appendDummyInput().appendField("Textur").appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.appendDummyInput().appendField("Achsen").appendField(new Blockly.FieldDropdown([["Horizontal","y"],["Alle","xyz"],["Nur vertikal","x"]]), "AXIS");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(120);
+            }
+        };
+        Blockly.JavaScript['vs_rotatable_block'] = function(block) {
+            var name = block.getFieldValue('NAME'), texture = block.getFieldValue('TEXTURE');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "Block", "behaviors": [{ "name": "HorizontalOrientable" }], "texture": { "base": texture !== "none" ? `block/${path.basename(texture, '.png')}` : "game:block/stone" } };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
+
+        Blockly.Blocks['vs_slab_stairs'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Stufe/Platte").appendField(new Blockly.FieldTextInput("myslab", validateName), "NAME");
+                this.appendDummyInput().appendField("Typ").appendField(new Blockly.FieldDropdown([["Platte","slab"],["Stufe","stair"]]), "TYPE");
+                this.appendDummyInput().appendField("Textur").appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(120);
+            }
+        };
+        Blockly.JavaScript['vs_slab_stairs'] = function(block) {
+            var name = block.getFieldValue('NAME'), type = block.getFieldValue('TYPE'), texture = block.getFieldValue('TEXTURE');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": type === "slab" ? "BlockSlab" : "BlockStairs", "drawtype": "JSON", "texture": { "base": texture !== "none" ? `block/${path.basename(texture, '.png')}` : "game:block/stone" } };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
+
+        Blockly.Blocks['vs_falling_block'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Fallender Block").appendField(new Blockly.FieldTextInput("myfalling", validateName), "NAME");
+                this.appendDummyInput().appendField("Textur").appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.appendDummyInput().appendField("Fallschaden").appendField(new Blockly.FieldCheckbox("TRUE"), "DAMAGE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(120);
+            }
+        };
+        Blockly.JavaScript['vs_falling_block'] = function(block) {
+            var name = block.getFieldValue('NAME'), texture = block.getFieldValue('TEXTURE');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "BlockFalling", "behaviors": [{ "name": "Unstable" }], "texture": { "base": texture !== "none" ? `block/${path.basename(texture, '.png')}` : "game:block/sand" } };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
+
+        Blockly.Blocks['vs_connected_textures'] = {
+            init: function() {
+                this.appendDummyInput().appendField("Verbundene Texturen").appendField(new Blockly.FieldTextInput("myconnected", validateName), "NAME");
+                this.appendDummyInput().appendField("Basistextur").appendField(new Blockly.FieldDropdown(getTextureOptions), "TEXTURE");
+                this.appendDummyInput().appendField("Verbindungstyp").appendField(new Blockly.FieldDropdown([["Gleicher Block","same"],["Gleiche Gruppe","group"],["Alle","all"]]), "CONNECT_TYPE");
+                this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(120);
+            }
+        };
+        Blockly.JavaScript['vs_connected_textures'] = function(block) {
+            var name = block.getFieldValue('NAME'), texture = block.getFieldValue('TEXTURE');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "Block", "drawtype": "Cube", "textureconnect": true, "texture": { "base": texture !== "none" ? `block/${path.basename(texture, '.png')}` : "game:block/glass" } };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
+
+        document.getElementById('output').innerText = "Blockly erfolgreich initialisiert. 80+ Blöcke verfügbar!";
     } catch (err) {
         document.getElementById('output').innerText = `Fehler beim Laden von Blockly: ${err.message}`;
     }
