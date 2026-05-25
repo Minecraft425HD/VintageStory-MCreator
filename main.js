@@ -33,7 +33,6 @@ function createMainWindow(config) {
     });
     remoteMain.enable(mainWindow.webContents);
     mainWindow.loadFile('index.html');
-    mainWindow.webContents.openDevTools();
     mainWindow.maximize(); // Optional: Fenster sofort maximieren
 
     mainWindow.webContents.on('did-finish-load', () => {

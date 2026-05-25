@@ -909,7 +909,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
             }
         };
-        Blockly.JavaScript['vs_npc_trader'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_npc_trader'] = function(block) {
+            var name = block.getFieldValue('NAME'), sells = block.getFieldValue('SELLS'), price = block.getFieldValue('PRICE'), currency = block.getFieldValue('CURRENCY');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "EntityTrader", "hitboxSize": { "x": 0.6, "y": 2 }, "deadHitboxSize": { "x": 0.6, "y": 0.25 }, "eyeHeight": 1.8, "attributes": { "tradeProps": { "goods": [{ "type": "item", "code": sells, "price": parseInt(price), "currency": currency }] } }, "client": { "renderer": "Shape", "shape": { "base": "game:entity/humanoid/trader" } }, "server": { "behaviors": [{ "code": "health", "attributes": { "maxhealth": 20 } }] } };
+            return JSON.stringify(json, null, 2) + '|||entity|||';
+        };
 
         Blockly.Blocks['vs_boss_entity'] = {
             init: function() {
@@ -920,7 +924,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
             }
         };
-        Blockly.JavaScript['vs_boss_entity'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_boss_entity'] = function(block) {
+            var name = block.getFieldValue('NAME'), health = block.getFieldValue('HEALTH'), phases = block.getFieldValue('PHASES'), damage = block.getFieldValue('DAMAGE');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "Monster", "hitboxSize": { "x": 1.5, "y": 2.5 }, "deadHitboxSize": { "x": 1.5, "y": 0.5 }, "eyeHeight": 2.0, "attributes": { "health": parseInt(health), "phases": parseInt(phases) }, "client": { "renderer": "Shape", "shape": { "base": `entity/${name}` } }, "server": { "behaviors": [{ "code": "health", "attributes": { "maxhealth": parseInt(health) } }, { "code": "meleeattack", "attributes": { "damage": parseFloat(damage), "damageTier": 3, "cooldown": 1.5 } }] } };
+            return JSON.stringify(json, null, 2) + '|||entity|||';
+        };
 
         // ========== WELTGENERIERUNG ==========
         Blockly.Blocks['vs_ore_deposit'] = {
@@ -969,7 +977,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
             }
         };
-        Blockly.JavaScript['vs_tree_type'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_tree_type'] = function(block) {
+            var name = block.getFieldValue('NAME'), log = block.getFieldValue('LOG'), leaves = block.getFieldValue('LEAVES'), height = block.getFieldValue('HEIGHT');
+            var json = { "code": `${modConfig.modName}:${name}`, "generator": "treegen", "log": log, "leaves": leaves, "minHeight": Math.max(3, parseInt(height) - 3), "maxHeight": parseInt(height) };
+            return JSON.stringify(json, null, 2) + '|||worldgen|||';
+        };
 
         Blockly.Blocks['vs_cave_decorator'] = {
             init: function() {
@@ -1094,7 +1106,12 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
             }
         };
-        Blockly.JavaScript['vs_cooking_recipe'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_cooking_recipe'] = function(block) {
+            var name = block.getFieldValue('NAME'), ingredients = block.getFieldValue('INGREDIENTS'), output = block.getFieldValue('OUTPUT'), time = block.getFieldValue('TIME');
+            var ingArray = ingredients.split(',').map(s => s.trim()).filter(s => s).map(s => ({ "type": "item", "code": s }));
+            var json = { "code": `${modConfig.modName}:cooking-${name}`, "cookingTime": parseInt(time), "ingredients": ingArray, "output": { "type": "item", "code": output } };
+            return JSON.stringify(json, null, 2) + '|||cooking|||';
+        };
 
         Blockly.Blocks['vs_alloy_recipe'] = {
             init: function() {
@@ -1131,7 +1148,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
             }
         };
-        Blockly.JavaScript['vs_drying_recipe'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_drying_recipe'] = function(block) {
+            var name = block.getFieldValue('NAME'), input = block.getFieldValue('INPUT'), output = block.getFieldValue('OUTPUT'), days = block.getFieldValue('DAYS');
+            var json = { "code": `${modConfig.modName}:drying-${name}`, "dryingDays": parseInt(days), "input": { "type": "item", "code": input }, "output": { "type": "item", "code": output } };
+            return JSON.stringify(json, null, 2) + '|||drying|||';
+        };
 
         Blockly.Blocks['vs_grinding_recipe'] = {
             init: function() {
@@ -1142,7 +1163,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
             }
         };
-        Blockly.JavaScript['vs_grinding_recipe'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_grinding_recipe'] = function(block) {
+            var name = block.getFieldValue('NAME'), input = block.getFieldValue('INPUT'), output = block.getFieldValue('OUTPUT'), quantity = block.getFieldValue('QUANTITY');
+            var json = { "code": `${modConfig.modName}:grinding-${name}`, "ingredient": { "type": "item", "code": input }, "output": { "type": "item", "code": output, "quantity": parseInt(quantity) } };
+            return JSON.stringify(json, null, 2) + '|||grinding|||';
+        };
 
         // ========== SOUNDS & PARTIKEL ==========
         Blockly.Blocks['vs_custom_sound'] = {
@@ -1339,7 +1364,29 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
             }
         };
-        Blockly.JavaScript['vs_keybind'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_keybind'] = function(block) {
+            var name = block.getFieldValue('NAME'), key = block.getFieldValue('KEY'), desc = block.getFieldValue('DESC');
+            var className = 'Keybind_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Client;
+
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        ICoreClientAPI capi;
+        public override void StartClientSide(ICoreClientAPI api) {
+            capi = api;
+            api.Input.RegisterHotKey("${name}", "${desc}", GlKeys.${key});
+            api.Input.SetHotKeyHandler("${name}", OnKeyPressed);
+        }
+        private bool OnKeyPressed(KeyCombination comb) {
+            capi.ShowChatMessage("${desc}");
+            return true;
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_on_player_join'] = {
             init: function() {
@@ -1371,7 +1418,30 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
             }
         };
-        Blockly.JavaScript['vs_on_block_break'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_on_block_break'] = function(block) {
+            var blockCode = block.getFieldValue('BLOCK'), action = block.getFieldValue('ACTION');
+            var safeId = blockCode.replace(/[^a-zA-Z0-9_]/g, '_');
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+
+namespace ${modConfig.modName} {
+    public class BlockBreakHandler_${safeId} : ModSystem {
+        ICoreServerAPI sapi;
+        public override void StartServerSide(ICoreServerAPI api) {
+            sapi = api;
+            api.Event.BreakBlock += OnBlockBreak;
+        }
+        private void OnBlockBreak(IServerPlayer byPlayer, BlockSelection blockSel, ref float dropQuantityMultiplier, ref EnumHandling handling) {
+            if (blockSel.Block?.Code?.ToString() == "${blockCode}") {
+                byPlayer.SendMessage(0, "${action}", EnumChatType.Notification);
+                sapi.Logger.Notification("Block ${blockCode} gebrochen von " + byPlayer.PlayerName);
+            }
+        }
+    }
+}`;
+            return 'csharp:BlockBreakHandler_' + safeId + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_on_entity_death'] = {
             init: function() {
@@ -1381,7 +1451,30 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
             }
         };
-        Blockly.JavaScript['vs_on_entity_death'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_on_entity_death'] = function(block) {
+            var entityCode = block.getFieldValue('ENTITY'), action = block.getFieldValue('ACTION');
+            var safeId = entityCode.replace(/[^a-zA-Z0-9_]/g, '_');
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+
+namespace ${modConfig.modName} {
+    public class EntityDeathHandler_${safeId} : ModSystem {
+        ICoreServerAPI sapi;
+        public override void StartServerSide(ICoreServerAPI api) {
+            sapi = api;
+            api.Event.OnEntityDeath += OnEntityDeath;
+        }
+        private void OnEntityDeath(Entity entity, DamageSource dmgSource) {
+            if (entity?.Code?.ToString() == "${entityCode}") {
+                sapi.BroadcastMessageToAllGroups("${action}", EnumChatType.Notification);
+                sapi.Logger.Notification("Entity ${entityCode} gestorben.");
+            }
+        }
+    }
+}`;
+            return 'csharp:EntityDeathHandler_' + safeId + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_on_item_use'] = {
             init: function() {
@@ -1401,7 +1494,27 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
             }
         };
-        Blockly.JavaScript['vs_timer_event'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_timer_event'] = function(block) {
+            var name = block.getFieldValue('NAME'), interval = block.getFieldValue('INTERVAL'), action = block.getFieldValue('ACTION');
+            var className = 'TimerEvent_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        ICoreServerAPI sapi;
+        public override void StartServerSide(ICoreServerAPI api) {
+            sapi = api;
+            api.Event.RegisterGameTickListener(OnTick, ${interval});
+        }
+        private void OnTick(float dt) {
+            sapi.BroadcastMessageToAllGroups("${action}", EnumChatType.Notification);
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_world_tick'] = {
             init: function() {
@@ -1410,7 +1523,25 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
             }
         };
-        Blockly.JavaScript['vs_world_tick'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_world_tick'] = function(block) {
+            var name = block.getFieldValue('NAME'), frequency = block.getFieldValue('FREQUENCY');
+            var className = 'WorldTick_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        public override void Start(ICoreAPI api) {
+            base.Start(api);
+            api.Event.RegisterGameTickListener(OnTick, ${parseInt(frequency) * 25});
+        }
+        private void OnTick(float dt) {
+            // World tick handler: ${name}
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         // ========== MECHANIKEN & SYSTEME ==========
         Blockly.Blocks['vs_temperature_system'] = {
@@ -1538,7 +1669,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(120);
             }
         };
-        Blockly.JavaScript['vs_crop_block'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_crop_block'] = function(block) {
+            var name = block.getFieldValue('NAME'), texture = block.getFieldValue('TEXTURE'), yield_item = block.getFieldValue('YIELD'), yield_amount = block.getFieldValue('YIELD_AMOUNT');
+            var json = { "code": `${modConfig.modName}:${name}-stage{stage}`, "class": "BlockCrop", "variantGroups": [{ "code": "stage", "states": ["1","2","3","4","5","6","7","8"] }], "drops": [{ "type": "item", "code": yield_item, "quantity": { "avg": parseInt(yield_amount), "var": 1 } }], "texture": { "base": texture !== "none" ? `block/${path.basename(texture, '.png')}` : "game:block/soil/farmland-dry" } };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
 
         Blockly.Blocks['vs_door_block'] = {
             init: function() {
@@ -1793,18 +1928,18 @@ namespace ${modConfig.modName} {
     }
 
     function generateMod() {
-        if (!/^[a-zA-Z0-9-_]+$/.test(modConfig.modName)) {
-            throw new Error("Ungültiger Mod-Name: Nur Buchstaben, Zahlen, Bindestriche und Unterstriche sind erlaubt.");
-        }
-
         const logFilePath = path.join(__dirname, `${sanitizeFileName(modConfig.modName)}_creation.log`);
-        fs.writeFileSync(logFilePath, '', 'utf8');
-
         let outputText = '';
         let blockClassMap = {};
         let behaviorMap = {};
 
         try {
+            if (!/^[a-zA-Z0-9-_]+$/.test(modConfig.modName)) {
+                throw new Error("Ungültiger Mod-Name: Nur Buchstaben, Zahlen, Bindestriche und Unterstriche sind erlaubt.");
+            }
+
+            try { fs.writeFileSync(logFilePath, '', 'utf8'); } catch (e) { /* non-critical */ }
+
             outputText += `Aktuelles Arbeitsverzeichnis: ${process.cwd()}\n`;
             const prereqCheck = checkPrerequisites();
             outputText += prereqCheck.message;
@@ -1871,20 +2006,25 @@ namespace ${modConfig.modName} {
 
             items.forEach((item, index) => {
                 if (item.startsWith('json:')) {
-                    const behaviorJson = JSON.parse(item.replace('json:', ''));
-                    const behaviorName = behaviorJson.name.split('.').pop().substring(8);
-                    if (blockClassMap[behaviorName]) {
-                        behaviors.push(behaviorJson);
-                        behaviorMap[behaviorName] = true;
-                        outputText += `Verhalten ${behaviorName} wird Block ${behaviorName} zugewiesen.\n`;
-                    } else {
-                        outputText += `Verhalten ${behaviorName} hat keinen passenden Block und wird ignoriert.\n`;
+                    try {
+                        const behaviorJson = JSON.parse(item.substring(5));
+                        const behaviorName = behaviorJson.name.split('.').pop().substring(8);
+                        if (blockClassMap[behaviorName]) {
+                            behaviors.push(behaviorJson);
+                            behaviorMap[behaviorName] = true;
+                            outputText += `Verhalten ${behaviorName} wird Block ${behaviorName} zugewiesen.\n`;
+                        } else {
+                            outputText += `Verhalten ${behaviorName} hat keinen passenden Block und wird ignoriert.\n`;
+                        }
+                    } catch (e) {
+                        outputText += `Warnung: Ungültiges Behavior-JSON übersprungen: ${e.message}\n`;
                     }
                 }
             });
 
             items.forEach((item, index) => {
                 if (item.startsWith('json:')) {
+                    // handled in behavior pass above
                 } else if (item.startsWith('csharp:')) {
                     hasCSharp = true;
                     const parts = item.split(':');
@@ -1895,38 +2035,115 @@ namespace ${modConfig.modName} {
                     outputText += `C#-Datei erstellt: src/${sanitizeFileName(name)}.cs\n`;
                     outputText += `Inhalt von src/${sanitizeFileName(name)}.cs:\n${csharpCode}\n\n`;
                 } else {
-                    const json = JSON.parse(item.trim());
-                    if (json.class && (json.class.startsWith(`${modConfig.modName}.Block`) || json.class === "Block")) {
+                    let json;
+                    try {
+                        json = JSON.parse(item.trim());
+                    } catch (e) {
+                        outputText += `Info: Nicht-JSON Token übersprungen: "${item.trim().substring(0, 30)}"\n`;
+                        return;
+                    }
+                    if (!json || typeof json !== 'object') return;
+                    const cls = json.class || '';
+                    const isBlock = cls.startsWith(`${modConfig.modName}.Block`) || cls === 'Block' || (cls.startsWith('Block') && cls.length > 5);
+                    const isItem = !isBlock && (cls === 'Item' || cls.startsWith('Item'));
+                    const isEntity = !isBlock && !isItem && (json.hitboxSize !== undefined || json.server !== undefined);
+
+                    if (isBlock) {
                         fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/blocktypes`), { recursive: true });
-                        const blockNameFromClass = json.class.split('.').length > 1 ? json.class.split('.')[1].substring(5) : json.code.split(':')[1];
+                        const blockNameFromClass = cls.split('.').length > 1 ? cls.split('.')[1].substring(5) : (json.code ? json.code.split(':')[1] : 'block');
                         if (behaviors.length > 0) {
                             outputText += `Prüfe Verhalten für Block ${blockNameFromClass}:\n`;
-                            outputText += `Verfügbare Verhalten: ${JSON.stringify(behaviors, null, 2)}\n`;
-                            json.behaviors = behaviors.filter(b => {
+                            json.behaviors = (json.behaviors || []).concat(behaviors.filter(b => {
                                 const behaviorBlockName = b.name.split('.').pop().substring(8);
-                                outputText += `Vergleiche: ${behaviorBlockName} mit ${blockNameFromClass}\n`;
                                 return behaviorBlockName === blockNameFromClass;
-                            });
+                            }));
                             outputText += `Zugewiesene Verhalten: ${JSON.stringify(json.behaviors, null, 2)}\n`;
                         }
-                        const blockFilePath = path.join(tempDir, `assets/${modConfig.modName}/blocktypes`, `${sanitizeFileName(json.code.split(':')[1])}.json`);
-                        fs.writeFileSync(blockFilePath, JSON.stringify(json, null, 2));
-                        outputText += `Block-Datei erstellt: assets/${modConfig.modName}/blocktypes/${sanitizeFileName(json.code.split(':')[1])}.json\n`;
-                    } else if (json.ingredientPattern) {
-                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes`), { recursive: true });
-                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes`, `${sanitizeFileName(json.output.code.split(':')[1])}_recipe.json`), JSON.stringify(json, null, 2));
-                        outputText += `Rezept-Datei erstellt: assets/${modConfig.modName}/recipes/${sanitizeFileName(json.output.code.split(':')[1])}_recipe.json\n`;
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'block';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/blocktypes`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Block-Datei erstellt: assets/${modConfig.modName}/blocktypes/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (isItem) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/itemtypes`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'item';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/itemtypes`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Item-Datei erstellt: assets/${modConfig.modName}/itemtypes/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (isEntity) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/entities`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'entity';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/entities`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Entity-Datei erstellt: assets/${modConfig.modName}/entities/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.ingredientPattern !== undefined) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/grid`), { recursive: true });
+                        const recipeCode = json.output && json.output.code ? sanitizeFileName(json.output.code.split(':')[1] || json.output.code) : 'recipe';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/grid`, `${recipeCode}_recipe.json`), JSON.stringify(json, null, 2));
+                        outputText += `Rezept-Datei erstellt: assets/${modConfig.modName}/recipes/grid/${recipeCode}_recipe.json\n`;
+                    } else if (json.sealHours !== undefined) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/barrel`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'barrel';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/barrel`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Fass-Rezept erstellt: assets/${modConfig.modName}/recipes/barrel/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.clayRequired !== undefined) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/clayforming`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'clay';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/clayforming`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Tonform-Rezept erstellt: assets/${modConfig.modName}/recipes/clayforming/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.ingredient !== undefined && json.output !== undefined && json.code && json.code.includes('smithing')) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/smithing`), { recursive: true });
+                        const codePart = json.code.split(':')[1] || json.code;
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/smithing`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Schmied-Rezept erstellt: assets/${modConfig.modName}/recipes/smithing/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.ingredient !== undefined && json.output !== undefined && json.code && json.code.includes('grinding')) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/quernstone`), { recursive: true });
+                        const codePart = json.code.split(':')[1] || json.code;
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/quernstone`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Mahlstein-Rezept erstellt: assets/${modConfig.modName}/recipes/quernstone/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.ingredient !== undefined && json.output !== undefined) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/knapping`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'knapping';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/knapping`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Steinbearbeitungs-Rezept erstellt: assets/${modConfig.modName}/recipes/knapping/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.cookingTime !== undefined && Array.isArray(json.ingredients)) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/cooking`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'cooking';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/cooking`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Koch-Rezept erstellt: assets/${modConfig.modName}/recipes/cooking/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (Array.isArray(json.ingredients) && json.output !== undefined) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/alloy`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'alloy';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/alloy`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Legierungs-Rezept erstellt: assets/${modConfig.modName}/recipes/alloy/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.dryingDays !== undefined) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/drying`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'drying';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/drying`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Trocknungs-Rezept erstellt: assets/${modConfig.modName}/recipes/drying/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.deposits !== undefined) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/worldgen/deposits`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'deposit';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/worldgen/deposits`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Weltgen-Deposit erstellt: assets/${modConfig.modName}/worldgen/deposits/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.generator === 'treegen') {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/worldgen/treegen`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'tree';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/worldgen/treegen`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Baumtyp erstellt: assets/${modConfig.modName}/worldgen/treegen/${sanitizeFileName(codePart)}.json\n`;
+                    } else {
+                        outputText += `Info: Unbekanntes JSON-Element übersprungen (class: "${cls}")\n`;
                     }
                 }
             });
 
             if (textureList.length > 0) {
-                const textureDir = path.join(tempDir, `assets/${modConfig.modName}/textures/block`);
-                fs.mkdirSync(textureDir, { recursive: true });
+                const blockTextureDir = path.join(tempDir, `assets/${modConfig.modName}/textures/block`);
+                const itemTextureDir = path.join(tempDir, `assets/${modConfig.modName}/textures/item`);
+                fs.mkdirSync(blockTextureDir, { recursive: true });
+                fs.mkdirSync(itemTextureDir, { recursive: true });
                 textureList.forEach(texture => {
-                    const textureFile = path.join(textureDir, path.basename(texture));
-                    fs.copyFileSync(texture, textureFile);
-                    outputText += `Textur kopiert: assets/${modConfig.modName}/textures/block/${path.basename(texture)}\n`;
+                    const texName = path.basename(texture);
+                    fs.copyFileSync(texture, path.join(blockTextureDir, texName));
+                    fs.copyFileSync(texture, path.join(itemTextureDir, texName));
+                    outputText += `Textur kopiert: assets/${modConfig.modName}/textures/block/${texName}\n`;
+                    outputText += `Textur kopiert: assets/${modConfig.modName}/textures/item/${texName}\n`;
                 });
             }
 
