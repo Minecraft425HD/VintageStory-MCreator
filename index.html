@@ -1459,7 +1459,34 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
             }
         };
-        Blockly.JavaScript['vs_hud_element'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_hud_element'] = function(block) {
+            var name = block.getFieldValue('NAME'), x = block.getFieldValue('X'), y = block.getFieldValue('Y'), text = block.getFieldValue('TEXT');
+            var safeId = name.replace(/[^a-zA-Z0-9_]/g, '_');
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Client;
+namespace ${modConfig.modName} {
+    public class HudElement_${safeId} : HudElement {
+        public override string ToggleKeyCombinationCode => null;
+        public HudElement_${safeId}(ICoreClientAPI capi) : base(capi) { SetupHud(); }
+        private void SetupHud() {
+            ElementBounds bounds = ElementBounds.Fixed(EnumDialogArea.None, ${parseInt(x)}, ${parseInt(y)}, 200, 30);
+            SingleComposer = capi.Gui.CreateCompo("hud_${safeId}", bounds)
+                .AddStaticText("${text}", CairoFont.WhiteSmallText(), bounds).Compose();
+        }
+        public override void OnRenderGUI(float deltaTime) { base.OnRenderGUI(deltaTime); }
+    }
+    public class HudMod_${safeId} : ModSystem {
+        HudElement_${safeId} hud;
+        public override void StartClientSide(ICoreClientAPI api) {
+            hud = new HudElement_${safeId}(api);
+            api.Gui.RegisterDialog(hud);
+            hud.TryOpen();
+        }
+    }
+}`;
+            return 'csharp:HudElement_' + safeId + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_progress_bar'] = {
             init: function() {
@@ -1470,7 +1497,32 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
             }
         };
-        Blockly.JavaScript['vs_progress_bar'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_progress_bar'] = function(block) {
+            var name = block.getFieldValue('NAME'), width = block.getFieldValue('WIDTH'), height = block.getFieldValue('HEIGHT'), color = block.getFieldValue('COLOR');
+            var colorMap = { 'green': '0, 200, 0', 'red': '200, 0, 0', 'blue': '0, 100, 200', 'yellow': '200, 200, 0' };
+            var rgb = colorMap[color] || '0, 200, 0';
+            var className = 'ProgressBar_' + name;
+            var csharp = `
+using Vintagestory.API.Client;
+using Vintagestory.API.Common;
+namespace ${modConfig.modName} {
+    public class ${className} : HudElement {
+        public ${className}(ICoreClientAPI capi) : base(capi) { SetupGui(); }
+        private void SetupGui() {
+            ElementBounds barBounds = ElementBounds.Fixed(0, 0, ${width}, ${height});
+            SingleComposer = capi.Gui.CreateCompo("${name}_bar", ElementStdBounds.AutosizedMainDialog)
+                .AddDynamicCustomDraw(barBounds, (ctx, surface, bounds) => {
+                    ctx.SetSourceRGB(${rgb});
+                    ctx.Rectangle(bounds.drawX, bounds.drawY, bounds.InnerWidth, bounds.InnerHeight);
+                    ctx.Fill();
+                }, "${name}_bar")
+                .Compose();
+        }
+        public override string ToggleKeyCombinationCode => null;
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_inventory_slots'] = {
             init: function() {
@@ -1480,7 +1532,28 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
             }
         };
-        Blockly.JavaScript['vs_inventory_slots'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_inventory_slots'] = function(block) {
+            var name = block.getFieldValue('NAME'), cols = block.getFieldValue('COLS'), rows = block.getFieldValue('ROWS');
+            var slots = parseInt(cols) * parseInt(rows);
+            var className = 'Inventory_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Client;
+using Vintagestory.GameContent;
+namespace ${modConfig.modName} {
+    public class InventoryGeneric_${name} : InventoryGeneric {
+        public InventoryGeneric_${name}(ICoreAPI api) : base(${slots}, "${modConfig.modName}:${name}", api) { }
+    }
+    public class ${className}Container : BlockEntityContainer {
+        InventoryGeneric_${name} inv;
+        public override InventoryBase Inventory => inv;
+        public override string InventoryClassName => "${modConfig.modName}:${name}";
+        public ${className}Container() { inv = new InventoryGeneric_${name}(null); }
+        public override void Initialize(ICoreAPI api) { inv.LateInitialize("${modConfig.modName}:${name}-0", api); base.Initialize(api); }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_button_element'] = {
             init: function() {
@@ -1491,7 +1564,34 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
             }
         };
-        Blockly.JavaScript['vs_button_element'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_button_element'] = function(block) {
+            var name = block.getFieldValue('NAME'), text = block.getFieldValue('TEXT'), width = block.getFieldValue('WIDTH'), action = block.getFieldValue('ACTION');
+            var className = 'GuiButton_' + name;
+            var csharp = `
+using Vintagestory.API.Client;
+using Vintagestory.API.Common;
+namespace ${modConfig.modName} {
+    public class ${className} : GuiDialog {
+        public override string ToggleKeyCombinationCode => "${name}_dialog";
+        public ${className}(ICoreClientAPI capi) : base(capi) { SetupDialog(); }
+        private void SetupDialog() {
+            ElementBounds dialogBounds = ElementStdBounds.AutosizedMainDialog.WithAlignment(EnumDialogArea.CenterMiddle);
+            ElementBounds btnBounds = ElementBounds.Fixed(10, 40, ${width}, 35);
+            SingleComposer = capi.Gui.CreateCompo("${name}_dialog", dialogBounds)
+                .AddShadedDialogBG(ElementBounds.Fill.WithFixedPadding(5))
+                .AddDialogTitleBar("${name}", () => TryClose())
+                .AddButton("${text}", On${action}, btnBounds)
+                .Compose();
+        }
+        private bool On${action}() {
+            capi.ShowChatMessage("${text} geklickt!");
+            TryClose();
+            return true;
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_text_input'] = {
             init: function() {
@@ -1501,7 +1601,33 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
             }
         };
-        Blockly.JavaScript['vs_text_input'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_text_input'] = function(block) {
+            var name = block.getFieldValue('NAME'), placeholder = block.getFieldValue('PLACEHOLDER'), width = block.getFieldValue('WIDTH');
+            var className = 'GuiTextInput_' + name;
+            var csharp = `
+using Vintagestory.API.Client;
+using Vintagestory.API.Common;
+namespace ${modConfig.modName} {
+    public class ${className} : GuiDialog {
+        public override string ToggleKeyCombinationCode => "${name}_dialog";
+        public ${className}(ICoreClientAPI capi) : base(capi) { SetupDialog(); }
+        private void SetupDialog() {
+            ElementBounds dialogBounds = ElementStdBounds.AutosizedMainDialog.WithAlignment(EnumDialogArea.CenterMiddle);
+            ElementBounds inputBounds = ElementBounds.Fixed(10, 40, ${width}, 30);
+            SingleComposer = capi.Gui.CreateCompo("${name}_dialog", dialogBounds)
+                .AddShadedDialogBG(ElementBounds.Fill.WithFixedPadding(5))
+                .AddDialogTitleBar("${name}", () => TryClose())
+                .AddTextInput(inputBounds, OnTextChanged, CairoFont.WhiteSmallText(), "${name}_input")
+                .Compose();
+            SingleComposer.GetTextInput("${name}_input").SetPlaceHolderText("${placeholder}");
+        }
+        private void OnTextChanged(string text) {
+            capi.Logger.Notification("${name} Eingabe: " + text);
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_dropdown_menu'] = {
             init: function() {
@@ -1510,7 +1636,37 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
             }
         };
-        Blockly.JavaScript['vs_dropdown_menu'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_dropdown_menu'] = function(block) {
+            var name = block.getFieldValue('NAME'), options = block.getFieldValue('OPTIONS');
+            var optArray = options.split(',').map(s => s.trim()).filter(s => s);
+            var optValues = JSON.stringify(optArray);
+            var optNames = JSON.stringify(optArray);
+            var className = 'GuiDropdown_' + name;
+            var csharp = `
+using Vintagestory.API.Client;
+using Vintagestory.API.Common;
+namespace ${modConfig.modName} {
+    public class ${className} : GuiDialog {
+        public override string ToggleKeyCombinationCode => "${name}_dialog";
+        public ${className}(ICoreClientAPI capi) : base(capi) { SetupDialog(); }
+        private void SetupDialog() {
+            string[] values = ${optValues};
+            string[] names = ${optNames};
+            ElementBounds dialogBounds = ElementStdBounds.AutosizedMainDialog.WithAlignment(EnumDialogArea.CenterMiddle);
+            ElementBounds dropBounds = ElementBounds.Fixed(10, 40, 200, 30);
+            SingleComposer = capi.Gui.CreateCompo("${name}_dialog", dialogBounds)
+                .AddShadedDialogBG(ElementBounds.Fill.WithFixedPadding(5))
+                .AddDialogTitleBar("${name}", () => TryClose())
+                .AddDropDown(values, names, 0, OnSelectionChanged, dropBounds, "${name}_drop")
+                .Compose();
+        }
+        private void OnSelectionChanged(string code, bool selected) {
+            capi.ShowChatMessage("${name} gewählt: " + code);
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_tooltip'] = {
             init: function() {
@@ -1519,7 +1675,30 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
             }
         };
-        Blockly.JavaScript['vs_tooltip'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_tooltip'] = function(block) {
+            var item = block.getFieldValue('ITEM'), text = block.getFieldValue('TEXT');
+            var className = 'Tooltip_' + item;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Client;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        public override void Start(ICoreAPI api) {
+            base.Start(api);
+            if (api.Side == EnumAppSide.Client) {
+                ICoreClientAPI capi = api as ICoreClientAPI;
+                capi.Event.BlockTexturesLoaded += () => {
+                    Item targetItem = capi.World.GetItem(new AssetLocation("${item}"));
+                    if (targetItem != null) {
+                        targetItem.Attributes["tooltip"] = new Vintagestory.API.Datastructures.StringAttribute("${text}");
+                    }
+                };
+            }
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         // ========== COMMANDS & EVENTS ==========
         Blockly.Blocks['vs_chat_command'] = {
@@ -1674,7 +1853,34 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
             }
         };
-        Blockly.JavaScript['vs_on_item_use'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_on_item_use'] = function(block) {
+            var itemCode = block.getFieldValue('ITEM'), action = block.getFieldValue('ACTION');
+            var safeId = itemCode.replace(/[^a-zA-Z0-9_]/g, '_');
+            var className = 'ItemUseHandler_' + safeId;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        ICoreServerAPI sapi;
+        public override void StartServerSide(ICoreServerAPI api) {
+            sapi = api;
+            api.Event.RegisterGameTickListener(CheckItemUse, 500);
+        }
+        private void CheckItemUse(float dt) {
+            foreach (IServerPlayer player in sapi.World.AllPlayers) {
+                ItemSlot slot = player.InventoryManager?.ActiveHotbarSlot;
+                if (slot?.Itemstack?.Collectible?.Code?.ToString() == "${itemCode}") {
+                    if (player.Entity.Controls.HandUse == EnumHandInteract.HeldItemInteract) {
+                        player.SendMessage(0, "${action}", EnumChatType.Notification);
+                    }
+                }
+            }
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_timer_event'] = {
             init: function() {
@@ -1744,7 +1950,33 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_temperature_system'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_temperature_system'] = function(block) {
+            var name = block.getFieldValue('NAME'), min = block.getFieldValue('MIN'), max = block.getFieldValue('MAX'), coldDmg = block.getFieldValue('COLD_DAMAGE'), heatDmg = block.getFieldValue('HEAT_DAMAGE');
+            var className = 'TempSystem_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        ICoreServerAPI sapi;
+        public override void StartServerSide(ICoreServerAPI api) {
+            sapi = api;
+            api.Event.RegisterGameTickListener(CheckTemperature, 2000);
+        }
+        private void CheckTemperature(float dt) {
+            foreach (IServerPlayer player in sapi.World.AllPlayers) {
+                float temp = player.Entity.World.BlockAccessor.GetClimateAt(player.Entity.Pos.AsBlockPos).Temperature;
+                if (temp < ${min}) {
+                    player.Entity.ReceiveDamage(new DamageSource { Type = EnumDamageType.Frost }, ${coldDmg}f);
+                } else if (temp > ${max}) {
+                    player.Entity.ReceiveDamage(new DamageSource { Type = EnumDamageType.Fire }, ${heatDmg}f);
+                }
+            }
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_nutrition_type'] = {
             init: function() {
@@ -1754,7 +1986,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_nutrition_type'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_nutrition_type'] = function(block) {
+            var name = block.getFieldValue('NAME'), category = block.getFieldValue('CATEGORY'), saturation = block.getFieldValue('SATURATION');
+            var json = { "code": `${modConfig.modName}:food-${name}`, "class": "Item", "maxstacksize": 8, "nutritionProps": { "foodCategory": category, "saturation": parseFloat(saturation), "health": 0 }, "creativeinventory": { "food": ["*"] }, "texture": { "base": "game:item/food/bread-rye" } };
+            return JSON.stringify(json, null, 2) + '|||item|||';
+        };
 
         Blockly.Blocks['vs_skill_system'] = {
             init: function() {
@@ -1764,7 +2000,31 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_skill_system'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_skill_system'] = function(block) {
+            var name = block.getFieldValue('NAME'), maxLevel = block.getFieldValue('MAX_LEVEL'), xpPerLevel = block.getFieldValue('XP_PER_LEVEL');
+            var className = 'SkillSystem_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Datastructures;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        public const int MaxLevel = ${maxLevel};
+        public const float XpPerLevel = ${xpPerLevel}f;
+        ICoreAPI api;
+        public override void Start(ICoreAPI api) { this.api = api; api.Logger.Notification("Skill ${name} initialisiert (Max: ${maxLevel}, XP/Level: ${xpPerLevel})"); }
+        public int GetLevel(IPlayer player) {
+            float xp = player.Entity.WatchedAttributes.GetFloat("${modConfig.modName}_${name}_xp", 0);
+            return (int)Math.Min(MaxLevel, xp / XpPerLevel);
+        }
+        public void AddXp(IPlayer player, float amount) {
+            float xp = player.Entity.WatchedAttributes.GetFloat("${modConfig.modName}_${name}_xp", 0) + amount;
+            player.Entity.WatchedAttributes.SetFloat("${modConfig.modName}_${name}_xp", xp);
+            player.Entity.WatchedAttributes.MarkPathDirty("${modConfig.modName}_${name}_xp");
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_experience_gain'] = {
             init: function() {
@@ -1774,7 +2034,34 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_experience_gain'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_experience_gain'] = function(block) {
+            var name = block.getFieldValue('NAME'), action = block.getFieldValue('ACTION'), amount = block.getFieldValue('AMOUNT');
+            var className = 'XpGain_' + name;
+            var actionMap = { 'mine': 'BreakBlock', 'kill': 'OnEntityDeath', 'craft': 'GridRecipeCrafted', 'explore': 'ChunkColumnLoaded' };
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        ICoreServerAPI sapi;
+        public override void StartServerSide(ICoreServerAPI api) {
+            sapi = api;
+            ${ action === 'mine' ? `api.Event.BreakBlock += (player, sel, ref float mult, ref EnumHandling h) => AddXp(player);` :
+               action === 'kill' ? `api.Event.OnEntityDeath += (entity, src) => { if (src?.SourceEntity is IPlayer p) AddXp(sapi.World.PlayerByUid(p.PlayerUID)); };` :
+               action === 'craft' ? `api.Event.GridRecipeCrafted += (recipe, player, output) => AddXp(player);` :
+               `api.Event.ChunkColumnLoaded += (chunkCoord, column) => { foreach(var p in sapi.World.AllPlayers) AddXp(p); };`
+            }
+        }
+        private void AddXp(IPlayer player) {
+            if (player == null) return;
+            float xp = player.Entity.WatchedAttributes.GetFloat("${modConfig.modName}_${name}_xp", 0) + ${amount}f;
+            player.Entity.WatchedAttributes.SetFloat("${modConfig.modName}_${name}_xp", xp);
+            player.Entity.WatchedAttributes.MarkPathDirty("${modConfig.modName}_${name}_xp");
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_status_effect'] = {
             init: function() {
@@ -1785,7 +2072,33 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_status_effect'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_status_effect'] = function(block) {
+            var name = block.getFieldValue('NAME'), type = block.getFieldValue('TYPE'), duration = block.getFieldValue('DURATION'), strength = block.getFieldValue('STRENGTH');
+            var className = 'StatusEffect_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        ICoreServerAPI sapi;
+        public override void StartServerSide(ICoreServerAPI api) { sapi = api; }
+        public void Apply(IPlayer player) {
+            player.Entity.WatchedAttributes.SetFloat("${modConfig.modName}_effect_${name}", ${strength}f);
+            player.Entity.WatchedAttributes.SetDouble("${modConfig.modName}_effect_${name}_until", sapi.World.Calendar.TotalHours + ${duration} / 3600.0);
+            player.Entity.WatchedAttributes.MarkPathDirty("${modConfig.modName}_effect_${name}");
+            ${ type === 'buff'
+                ? `player.Entity.Stats.Set("${modConfig.modName}_${name}", "walkspeed", ${strength} * 0.1f, true);`
+                : `player.Entity.ReceiveDamage(new DamageSource { Type = EnumDamageType.Poison }, ${strength} * 0.5f);`
+            }
+        }
+        public void Remove(IPlayer player) {
+            player.Entity.WatchedAttributes.RemoveAttribute("${modConfig.modName}_effect_${name}");
+            player.Entity.Stats.Remove("${modConfig.modName}_${name}", "walkspeed");
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_damage_type'] = {
             init: function() {
@@ -1795,7 +2108,25 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_damage_type'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_damage_type'] = function(block) {
+            var name = block.getFieldValue('NAME'), type = block.getFieldValue('TYPE'), damage = block.getFieldValue('DAMAGE');
+            var enumMap = { 'physical': 'BluntAttack', 'fire': 'Fire', 'frost': 'Frost', 'poison': 'Poison', 'magic': 'Electricity', 'fall': 'Falling' };
+            var className = 'DamageType_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        public static void Apply(Entity target, float multiplier = 1f) {
+            target.ReceiveDamage(new DamageSource {
+                Type = EnumDamageType.${enumMap[type] || 'BluntAttack'},
+                SourceEntity = null
+            }, ${damage}f * multiplier);
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_repair_system'] = {
             init: function() {
@@ -1806,7 +2137,34 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_repair_system'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_repair_system'] = function(block) {
+            var name = block.getFieldValue('NAME'), item = block.getFieldValue('ITEM'), material = block.getFieldValue('MATERIAL'), repairPct = block.getFieldValue('REPAIR_PERCENT');
+            var className = 'RepairSystem_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        public override void StartServerSide(ICoreServerAPI api) {
+            api.Event.PlayerInteractEntity += (entity, player, slot, hitPos, mode, ref EnumHandling handling) => {
+                if (slot?.Itemstack?.Collectible?.Code?.ToString() == "${material}") {
+                    IServerPlayer serverPlayer = player as IServerPlayer;
+                    ItemSlot offhand = serverPlayer?.InventoryManager?.GetHotbarInventory()?[9];
+                    if (offhand?.Itemstack?.Collectible?.Code?.ToString() == "${item}") {
+                        int maxDur = offhand.Itemstack.Collectible.GetMaxDurability(offhand.Itemstack);
+                        int curDur = offhand.Itemstack.Attributes.GetInt("durability", maxDur);
+                        int repair = (int)(maxDur * ${repairPct}f / 100f);
+                        offhand.Itemstack.Attributes.SetInt("durability", Math.Min(maxDur, curDur + repair));
+                        slot.TakeOut(1);
+                        serverPlayer.SendMessage(0, "Repariert: ${item} um ${repairPct}%", EnumChatType.Notification);
+                    }
+                }
+            };
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_decay_system'] = {
             init: function() {
@@ -1817,7 +2175,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_decay_system'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_decay_system'] = function(block) {
+            var name = block.getFieldValue('NAME'), item = block.getFieldValue('ITEM'), days = block.getFieldValue('DAYS'), result = block.getFieldValue('RESULT');
+            var json = { "code": `${modConfig.modName}:decay-${name}`, "inputCode": item, "outputCode": result, "decayDays": parseInt(days), "transitionType": "Decay", "whenRotten": { "type": "item", "code": result } };
+            return JSON.stringify(json, null, 2) + '|||decayconfig|||';
+        };
 
         // ========== ERWEITERTE BLÖCKE ==========
         Blockly.Blocks['vs_liquid_block'] = {
@@ -2318,7 +2680,17 @@ namespace ${modConfig.modName} {
                         fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/worldgen/treegen`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
                         outputText += `Baumtyp erstellt: assets/${modConfig.modName}/worldgen/treegen/${sanitizeFileName(codePart)}.json\n`;
                     } else {
-                        outputText += `Info: Unbekanntes JSON-Element übersprungen (class: "${cls}")\n`;
+                        if (json.decayDays !== undefined) {
+                            fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/config`), { recursive: true });
+                            const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'decay';
+                            fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/config`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                            outputText += `Decay-Config erstellt: assets/${modConfig.modName}/config/${sanitizeFileName(codePart)}.json\n`;
+                        } else {
+                            fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/misc`), { recursive: true });
+                            const codePart = json.code ? sanitizeFileName(json.code.split(':')[1] || json.code) : `element_${index}`;
+                            fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/misc`, `${codePart}.json`), JSON.stringify(json, null, 2));
+                            outputText += `Misc JSON gespeichert: assets/${modConfig.modName}/misc/${codePart}.json (class: "${cls}")\n`;
+                        }
                     }
                 }
             });
