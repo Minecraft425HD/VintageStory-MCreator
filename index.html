@@ -1304,7 +1304,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
             }
         };
-        Blockly.JavaScript['vs_custom_sound'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_custom_sound'] = function(block) {
+            var name = block.getFieldValue('NAME'), volume = block.getFieldValue('VOLUME'), range = block.getFieldValue('RANGE');
+            var json = { "code": `${modConfig.modName}:sound/${name}`, "soundType": "custom", "volume": parseFloat(volume), "range": parseInt(range) };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
 
         Blockly.Blocks['vs_ambient_sound'] = {
             init: function() {
@@ -1314,7 +1318,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
             }
         };
-        Blockly.JavaScript['vs_ambient_sound'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_ambient_sound'] = function(block) {
+            var name = block.getFieldValue('NAME'), sound = block.getFieldValue('SOUND'), interval = block.getFieldValue('INTERVAL');
+            var json = { "code": `${modConfig.modName}:ambient-${name}`, "ambientSound": sound, "intervalSeconds": parseInt(interval) };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
 
         Blockly.Blocks['vs_particle_effect'] = {
             init: function() {
@@ -1325,7 +1333,34 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
             }
         };
-        Blockly.JavaScript['vs_particle_effect'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_particle_effect'] = function(block) {
+            var name = block.getFieldValue('NAME'), type = block.getFieldValue('TYPE'), quantity = block.getFieldValue('QUANTITY'), lifetime = block.getFieldValue('LIFETIME');
+            var safeId = name.replace(/[^a-zA-Z0-9_]/g, '_');
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Client;
+using Vintagestory.API.MathTools;
+namespace ${modConfig.modName} {
+    public class ParticleEffect_${safeId} : ModSystem {
+        public override void StartClientSide(ICoreClientAPI api) {
+            // Particle effect: ${name}, type: ${type}
+        }
+        public static SimpleParticleProperties Create${safeId}Particles(Vec3d pos) {
+            var props = new SimpleParticleProperties(
+                ${parseInt(quantity)}, ${parseInt(quantity)},
+                ColorUtil.ToRgba(200, 200, 200, 200),
+                pos, pos,
+                new Vec3f(-0.5f, 0.3f, -0.5f), new Vec3f(0.5f, 1.0f, 0.5f),
+                ${parseFloat(lifetime)}f, 1f, 0.3f, 1.0f
+            );
+            props.SelfPropelled = true;
+            props.GravityEffect = 0.5f;
+            return props;
+        }
+    }
+}`;
+            return 'csharp:ParticleEffect_' + safeId + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_block_particles'] = {
             init: function() {
@@ -1335,7 +1370,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
             }
         };
-        Blockly.JavaScript['vs_block_particles'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_block_particles'] = function(block) {
+            var blockName = block.getFieldValue('BLOCK'), particle = block.getFieldValue('PARTICLE'), rate = block.getFieldValue('RATE');
+            var json = { "code": `${modConfig.modName}:${blockName}`, "class": "Block", "particleProperties": [{ "type": particle, "quantity": parseFloat(rate), "pos": "center" }], "soundStep": "none" };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
 
         Blockly.Blocks['vs_weather_particles'] = {
             init: function() {
@@ -1345,7 +1384,28 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
             }
         };
-        Blockly.JavaScript['vs_weather_particles'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_weather_particles'] = function(block) {
+            var type = block.getFieldValue('TYPE'), intensity = block.getFieldValue('INTENSITY');
+            var safeId = type.replace(/[^a-zA-Z0-9_]/g, '_');
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Client;
+namespace ${modConfig.modName} {
+    public class WeatherParticles_${safeId} : ModSystem {
+        ICoreClientAPI capi;
+        public override void StartClientSide(ICoreClientAPI api) {
+            capi = api;
+            api.Event.RegisterGameTickListener(OnTick, 50);
+        }
+        private void OnTick(float dt) {
+            if (capi.World.Player?.Entity == null) return;
+            // Weather particle type: ${type}, intensity: ${parseFloat(intensity)}
+            // Implementation: spawn ${type} particles around player
+        }
+    }
+}`;
+            return 'csharp:WeatherParticles_' + safeId + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_footstep_sound'] = {
             init: function() {
@@ -1354,7 +1414,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
             }
         };
-        Blockly.JavaScript['vs_footstep_sound'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_footstep_sound'] = function(block) {
+            var blockName = block.getFieldValue('BLOCK'), sound = block.getFieldValue('SOUND');
+            var json = { "code": `${modConfig.modName}:${blockName}`, "class": "Block", "soundStep": sound, "sounds": { "walk": `game:walk/${sound}`, "run": `game:run/${sound}`, "break": `game:block/${sound}`, "place": `game:block/${sound}` } };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
 
         // ========== GUI & HUD ==========
         Blockly.Blocks['vs_custom_gui'] = {
