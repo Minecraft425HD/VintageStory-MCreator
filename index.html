@@ -732,7 +732,22 @@ namespace ${modConfig.modName} {
             },
             getItemOptions: function() { return [["Kein Item definiert", "none"]]; }
         };
-        Blockly.JavaScript['vs_item_durability'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_item_durability'] = function(block) {
+            var item = block.getFieldValue('ITEM'), value = block.getFieldValue('VALUE');
+            var className = 'ItemDurability_' + item.replace(/[^a-zA-Z0-9_]/g, '_');
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        public override void AssetsLoaded(ICoreAPI api) {
+            var item = api.World.GetItem(new AssetLocation("${item}"));
+            if (item != null) item.Durability = ${parseInt(value)};
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_tool_mining_speed'] = {
             init: function() {
@@ -742,7 +757,13 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(285);
             }
         };
-        Blockly.JavaScript['vs_tool_mining_speed'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_tool_mining_speed'] = function(block) {
+            var material = block.getFieldValue('MATERIAL'), speed = block.getFieldValue('SPEED');
+            var json = { "miningSpeed": {} };
+            json["miningSpeed"][material] = parseFloat(speed);
+            json["snippetType"] = "miningSpeed";
+            return JSON.stringify(json, null, 2) + '|||snippet|||';
+        };
 
         Blockly.Blocks['vs_tool_tier'] = {
             init: function() {
@@ -752,7 +773,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(285);
             }
         };
-        Blockly.JavaScript['vs_tool_tier'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_tool_tier'] = function(block) {
+            var name = block.getFieldValue('NAME'), level = block.getFieldValue('LEVEL'), mineable = block.getFieldValue('MINEABLE');
+            var json = { "code": `${modConfig.modName}:tier-${name}`, "level": parseInt(level), "mineableBlocks": mineable.split(',').map(s => s.trim()).filter(s => s) };
+            return JSON.stringify(json, null, 2) + '|||worldgen|||';
+        };
 
         Blockly.Blocks['vs_item_stack_size'] = {
             init: function() {
@@ -762,7 +787,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(285);
             }
         };
-        Blockly.JavaScript['vs_item_stack_size'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_item_stack_size'] = function(block) {
+            var item = block.getFieldValue('ITEM'), size = block.getFieldValue('SIZE');
+            var json = { "code": item, "maxstacksize": parseInt(size), "snippetType": "stacksize" };
+            return JSON.stringify(json, null, 2) + '|||snippet|||';
+        };
 
         Blockly.Blocks['vs_item_attributes'] = {
             init: function() {
@@ -772,7 +801,13 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(285);
             }
         };
-        Blockly.JavaScript['vs_item_attributes'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_item_attributes'] = function(block) {
+            var item = block.getFieldValue('ITEM'), attrName = block.getFieldValue('ATTR_NAME'), attrValue = block.getFieldValue('ATTR_VALUE');
+            var attrs = {};
+            attrs[attrName] = isNaN(Number(attrValue)) ? attrValue : Number(attrValue);
+            var json = { "code": `${modConfig.modName}:${item}`, "attributes": attrs, "snippetType": "itemattributes" };
+            return JSON.stringify(json, null, 2) + '|||snippet|||';
+        };
 
         Blockly.Blocks['vs_throwable_item'] = {
             init: function() {
@@ -814,7 +849,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
             }
         };
-        Blockly.JavaScript['vs_entity_ai'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_entity_ai'] = function(block) {
+            var entity = block.getFieldValue('ENTITY'), behavior = block.getFieldValue('BEHAVIOR'), priority = block.getFieldValue('PRIORITY');
+            var json = { "code": `${modConfig.modName}:${entity}`, "class": "EntityAgent", "hitboxSize": { "x": 0.5, "y": 1 }, "deadHitboxSize": { "x": 0.5, "y": 0.25 }, "eyeHeight": 0.9, "server": { "behaviors": [{ "code": behavior, "priority": parseInt(priority) }] } };
+            return JSON.stringify(json, null, 2) + '|||entity|||';
+        };
 
         Blockly.Blocks['vs_entity_stats'] = {
             init: function() {
@@ -825,7 +864,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
             }
         };
-        Blockly.JavaScript['vs_entity_stats'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_entity_stats'] = function(block) {
+            var entity = block.getFieldValue('ENTITY'), health = block.getFieldValue('HEALTH'), damage = block.getFieldValue('DAMAGE'), armor = block.getFieldValue('ARMOR');
+            var json = { "code": `${modConfig.modName}:${entity}`, "class": "EntityAgent", "hitboxSize": { "x": 0.5, "y": 1 }, "deadHitboxSize": { "x": 0.5, "y": 0.25 }, "eyeHeight": 0.9, "attributes": { "health": parseInt(health), "armor": parseInt(armor) }, "server": { "behaviors": [{ "code": "health", "attributes": { "maxhealth": parseInt(health) } }, { "code": "meleeattack", "attributes": { "damage": parseFloat(damage), "damageTier": 1, "cooldown": 1.5 } }] } };
+            return JSON.stringify(json, null, 2) + '|||entity|||';
+        };
 
         Blockly.Blocks['vs_entity_drops'] = {
             init: function() {
@@ -837,7 +880,35 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
             }
         };
-        Blockly.JavaScript['vs_entity_drops'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_entity_drops'] = function(block) {
+            var entity = block.getFieldValue('ENTITY'), dropItem = block.getFieldValue('DROP_ITEM');
+            var min = block.getFieldValue('MIN'), max = block.getFieldValue('MAX'), chance = block.getFieldValue('CHANCE');
+            var safeId = entity.replace(/[^a-zA-Z0-9_]/g, '_');
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+using Vintagestory.API.MathTools;
+namespace ${modConfig.modName} {
+    public class EntityDrops_${safeId} : ModSystem {
+        ICoreServerAPI sapi;
+        public override void StartServerSide(ICoreServerAPI api) {
+            sapi = api;
+            api.Event.OnEntityDeath += OnEntityDeath;
+        }
+        private void OnEntityDeath(Entity entity, DamageSource dmgSource) {
+            if (entity?.Code?.ToString() == "${modConfig.modName}:${entity}") {
+                var rnd = sapi.World.Rand;
+                if (rnd.NextDouble() <= ${parseFloat(chance) / 100.0}) {
+                    int qty = ${parseInt(min)} + rnd.Next(${Math.max(0, parseInt(max) - parseInt(min) + 1)});
+                    var stack = new ItemStack(sapi.World.GetItem(new AssetLocation("${dropItem}")), qty);
+                    entity.World.SpawnItemEntity(stack, entity.ServerPos.XYZ);
+                }
+            }
+        }
+    }
+}`;
+            return 'csharp:EntityDrops_' + safeId + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_entity_spawn'] = {
             init: function() {
@@ -848,7 +919,12 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
             }
         };
-        Blockly.JavaScript['vs_entity_spawn'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_entity_spawn'] = function(block) {
+            var entity = block.getFieldValue('ENTITY'), biome = block.getFieldValue('BIOME');
+            var groupSize = block.getFieldValue('GROUP_SIZE'), weight = block.getFieldValue('WEIGHT');
+            var json = { "code": `${modConfig.modName}:${entity}`, "class": "EntityAgent", "hitboxSize": { "x": 0.5, "y": 1 }, "deadHitboxSize": { "x": 0.5, "y": 0.25 }, "eyeHeight": 0.9, "server": { "behaviors": [{ "code": "health", "attributes": { "maxhealth": 20 } }] }, "spawnconditions": [{ "biome": biome, "herdSize": { "min": 1, "max": parseInt(groupSize) }, "weight": parseFloat(weight) }] };
+            return JSON.stringify(json, null, 2) + '|||entity|||';
+        };
 
         Blockly.Blocks['vs_entity_animation'] = {
             init: function() {
@@ -858,7 +934,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
             }
         };
-        Blockly.JavaScript['vs_entity_animation'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_entity_animation'] = function(block) {
+            var entity = block.getFieldValue('ENTITY'), animType = block.getFieldValue('ANIM_TYPE'), animFile = block.getFieldValue('ANIM_FILE');
+            var json = { "code": `${modConfig.modName}:${entity}`, "class": "EntityAgent", "hitboxSize": { "x": 0.5, "y": 1 }, "deadHitboxSize": { "x": 0.5, "y": 0.25 }, "eyeHeight": 0.9, "server": { "behaviors": [{ "code": "health", "attributes": { "maxhealth": 20 } }] }, "client": { "renderer": "Shape", "shape": { "base": `entity/${entity}` }, "animations": [{ "code": animType, "animation": animFile }] } };
+            return JSON.stringify(json, null, 2) + '|||entity|||';
+        };
 
         Blockly.Blocks['vs_entity_sounds'] = {
             init: function() {
@@ -868,7 +948,13 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
             }
         };
-        Blockly.JavaScript['vs_entity_sounds'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_entity_sounds'] = function(block) {
+            var entity = block.getFieldValue('ENTITY'), event_ = block.getFieldValue('EVENT'), sound = block.getFieldValue('SOUND');
+            var sounds = {};
+            sounds[event_] = [{ "name": sound, "range": 16, "volume": 1.0 }];
+            var json = { "code": `${modConfig.modName}:${entity}`, "class": "EntityAgent", "hitboxSize": { "x": 0.5, "y": 1 }, "deadHitboxSize": { "x": 0.5, "y": 0.25 }, "eyeHeight": 0.9, "server": { "behaviors": [{ "code": "health", "attributes": { "maxhealth": 20 } }] }, "sounds": sounds };
+            return JSON.stringify(json, null, 2) + '|||entity|||';
+        };
 
         Blockly.Blocks['vs_entity_taming'] = {
             init: function() {
@@ -878,7 +964,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
             }
         };
-        Blockly.JavaScript['vs_entity_taming'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_entity_taming'] = function(block) {
+            var entity = block.getFieldValue('ENTITY'), food = block.getFieldValue('FOOD'), days = block.getFieldValue('DAYS');
+            var json = { "code": `${modConfig.modName}:${entity}`, "class": "EntityAgent", "hitboxSize": { "x": 0.5, "y": 1 }, "deadHitboxSize": { "x": 0.5, "y": 0.25 }, "eyeHeight": 0.9, "server": { "behaviors": [{ "code": "health", "attributes": { "maxhealth": 20 } }, { "code": "tameable", "attributes": { "tamingItem": food, "tamingDays": parseInt(days) } }] } };
+            return JSON.stringify(json, null, 2) + '|||entity|||';
+        };
 
         Blockly.Blocks['vs_entity_breeding'] = {
             init: function() {
@@ -888,7 +978,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
             }
         };
-        Blockly.JavaScript['vs_entity_breeding'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_entity_breeding'] = function(block) {
+            var entity = block.getFieldValue('ENTITY'), offspring = block.getFieldValue('OFFSPRING'), gestation = block.getFieldValue('GESTATION');
+            var json = { "code": `${modConfig.modName}:${entity}`, "class": "EntityAgent", "hitboxSize": { "x": 0.5, "y": 1 }, "deadHitboxSize": { "x": 0.5, "y": 0.25 }, "eyeHeight": 0.9, "server": { "behaviors": [{ "code": "health", "attributes": { "maxhealth": 20 } }, { "code": "breedable", "attributes": { "offspringEntityCode": `${modConfig.modName}:${offspring}`, "gestationDays": parseInt(gestation) } }] } };
+            return JSON.stringify(json, null, 2) + '|||entity|||';
+        };
 
         Blockly.Blocks['vs_entity_mount'] = {
             init: function() {
@@ -898,7 +992,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
             }
         };
-        Blockly.JavaScript['vs_entity_mount'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_entity_mount'] = function(block) {
+            var entity = block.getFieldValue('ENTITY'), speed = block.getFieldValue('SPEED'), jump = block.getFieldValue('JUMP');
+            var json = { "code": `${modConfig.modName}:${entity}`, "class": "EntityAgent", "hitboxSize": { "x": 0.8, "y": 1.5 }, "deadHitboxSize": { "x": 0.8, "y": 0.5 }, "eyeHeight": 1.3, "server": { "behaviors": [{ "code": "health", "attributes": { "maxhealth": 30 } }, { "code": "mountable", "attributes": { "moveSpeed": parseFloat(speed), "jumpHeight": parseFloat(jump) } }] } };
+            return JSON.stringify(json, null, 2) + '|||entity|||';
+        };
 
         Blockly.Blocks['vs_npc_trader'] = {
             init: function() {
@@ -909,7 +1007,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
             }
         };
-        Blockly.JavaScript['vs_npc_trader'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_npc_trader'] = function(block) {
+            var name = block.getFieldValue('NAME'), sells = block.getFieldValue('SELLS'), price = block.getFieldValue('PRICE'), currency = block.getFieldValue('CURRENCY');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "EntityTrader", "hitboxSize": { "x": 0.6, "y": 2 }, "deadHitboxSize": { "x": 0.6, "y": 0.25 }, "eyeHeight": 1.8, "attributes": { "tradeProps": { "goods": [{ "type": "item", "code": sells, "price": parseInt(price), "currency": currency }] } }, "client": { "renderer": "Shape", "shape": { "base": "game:entity/humanoid/trader" } }, "server": { "behaviors": [{ "code": "health", "attributes": { "maxhealth": 20 } }] } };
+            return JSON.stringify(json, null, 2) + '|||entity|||';
+        };
 
         Blockly.Blocks['vs_boss_entity'] = {
             init: function() {
@@ -920,7 +1022,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(0);
             }
         };
-        Blockly.JavaScript['vs_boss_entity'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_boss_entity'] = function(block) {
+            var name = block.getFieldValue('NAME'), health = block.getFieldValue('HEALTH'), phases = block.getFieldValue('PHASES'), damage = block.getFieldValue('DAMAGE');
+            var json = { "code": `${modConfig.modName}:${name}`, "class": "Monster", "hitboxSize": { "x": 1.5, "y": 2.5 }, "deadHitboxSize": { "x": 1.5, "y": 0.5 }, "eyeHeight": 2.0, "attributes": { "health": parseInt(health), "phases": parseInt(phases) }, "client": { "renderer": "Shape", "shape": { "base": `entity/${name}` } }, "server": { "behaviors": [{ "code": "health", "attributes": { "maxhealth": parseInt(health) } }, { "code": "meleeattack", "attributes": { "damage": parseFloat(damage), "damageTier": 3, "cooldown": 1.5 } }] } };
+            return JSON.stringify(json, null, 2) + '|||entity|||';
+        };
 
         // ========== WELTGENERIERUNG ==========
         Blockly.Blocks['vs_ore_deposit'] = {
@@ -947,7 +1053,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
             }
         };
-        Blockly.JavaScript['vs_structure_gen'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_structure_gen'] = function(block) {
+            var name = block.getFieldValue('NAME'), frequency = block.getFieldValue('FREQUENCY'), biome = block.getFieldValue('BIOME');
+            var json = { "code": `${modConfig.modName}:${name}`, "structureFrequency": parseFloat(frequency), "biome": biome, "schematicFile": name };
+            return JSON.stringify(json, null, 2) + '|||worldgen|||';
+        };
 
         Blockly.Blocks['vs_biome_modifier'] = {
             init: function() {
@@ -958,7 +1068,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
             }
         };
-        Blockly.JavaScript['vs_biome_modifier'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_biome_modifier'] = function(block) {
+            var biome = block.getFieldValue('BIOME'), temp = block.getFieldValue('TEMP'), humidity = block.getFieldValue('HUMIDITY');
+            var json = { "code": `${modConfig.modName}:biome-${biome}`, "biome": biome, "biomeTemperature": parseInt(temp), "biomeHumidity": parseInt(humidity) };
+            return JSON.stringify(json, null, 2) + '|||worldgen|||';
+        };
 
         Blockly.Blocks['vs_tree_type'] = {
             init: function() {
@@ -969,7 +1083,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
             }
         };
-        Blockly.JavaScript['vs_tree_type'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_tree_type'] = function(block) {
+            var name = block.getFieldValue('NAME'), log = block.getFieldValue('LOG'), leaves = block.getFieldValue('LEAVES'), height = block.getFieldValue('HEIGHT');
+            var json = { "code": `${modConfig.modName}:${name}`, "generator": "treegen", "log": log, "leaves": leaves, "minHeight": Math.max(3, parseInt(height) - 3), "maxHeight": parseInt(height) };
+            return JSON.stringify(json, null, 2) + '|||worldgen|||';
+        };
 
         Blockly.Blocks['vs_cave_decorator'] = {
             init: function() {
@@ -979,7 +1097,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
             }
         };
-        Blockly.JavaScript['vs_cave_decorator'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_cave_decorator'] = function(block) {
+            var name = block.getFieldValue('NAME'), blockCode = block.getFieldValue('BLOCK'), frequency = block.getFieldValue('FREQUENCY');
+            var json = { "code": `${modConfig.modName}:${name}`, "block": blockCode, "caveFrequency": parseInt(frequency) };
+            return JSON.stringify(json, null, 2) + '|||worldgen|||';
+        };
 
         Blockly.Blocks['vs_surface_deposit'] = {
             init: function() {
@@ -989,7 +1111,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
             }
         };
-        Blockly.JavaScript['vs_surface_deposit'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_surface_deposit'] = function(block) {
+            var name = block.getFieldValue('NAME'), blockCode = block.getFieldValue('BLOCK'), frequency = block.getFieldValue('FREQUENCY');
+            var json = { "code": `${modConfig.modName}:${name}`, "block": blockCode, "surfaceFrequency": parseFloat(frequency) };
+            return JSON.stringify(json, null, 2) + '|||worldgen|||';
+        };
 
         Blockly.Blocks['vs_ruins_generator'] = {
             init: function() {
@@ -999,7 +1125,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
             }
         };
-        Blockly.JavaScript['vs_ruins_generator'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_ruins_generator'] = function(block) {
+            var name = block.getFieldValue('NAME'), size = block.getFieldValue('SIZE'), frequency = block.getFieldValue('FREQUENCY');
+            var json = { "code": `${modConfig.modName}:${name}`, "ruinsSize": size, "ruinsFrequency": parseFloat(frequency) };
+            return JSON.stringify(json, null, 2) + '|||worldgen|||';
+        };
 
         Blockly.Blocks['vs_dungeon_gen'] = {
             init: function() {
@@ -1010,7 +1140,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(160);
             }
         };
-        Blockly.JavaScript['vs_dungeon_gen'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_dungeon_gen'] = function(block) {
+            var name = block.getFieldValue('NAME'), depth = block.getFieldValue('DEPTH'), rooms = block.getFieldValue('ROOMS'), loot = block.getFieldValue('LOOT');
+            var json = { "code": `${modConfig.modName}:${name}`, "dungeonDepth": parseInt(depth), "dungeonRooms": parseInt(rooms), "lootTable": loot };
+            return JSON.stringify(json, null, 2) + '|||worldgen|||';
+        };
 
         // ========== CRAFTING & VERARBEITUNG ==========
         Blockly.Blocks['vs_grid_recipe'] = {
@@ -1094,7 +1228,12 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
             }
         };
-        Blockly.JavaScript['vs_cooking_recipe'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_cooking_recipe'] = function(block) {
+            var name = block.getFieldValue('NAME'), ingredients = block.getFieldValue('INGREDIENTS'), output = block.getFieldValue('OUTPUT'), time = block.getFieldValue('TIME');
+            var ingArray = ingredients.split(',').map(s => s.trim()).filter(s => s).map(s => ({ "type": "item", "code": s }));
+            var json = { "code": `${modConfig.modName}:cooking-${name}`, "cookingTime": parseInt(time), "ingredients": ingArray, "output": { "type": "item", "code": output } };
+            return JSON.stringify(json, null, 2) + '|||cooking|||';
+        };
 
         Blockly.Blocks['vs_alloy_recipe'] = {
             init: function() {
@@ -1120,7 +1259,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
             }
         };
-        Blockly.JavaScript['vs_fuel_type'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_fuel_type'] = function(block) {
+            var name = block.getFieldValue('NAME'), item = block.getFieldValue('ITEM'), duration = block.getFieldValue('DURATION'), temp = block.getFieldValue('TEMP');
+            var json = { "code": `${modConfig.modName}:fuel-${name}`, "item": item, "burnDuration": parseInt(duration), "maxTemperature": parseInt(temp) };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
 
         Blockly.Blocks['vs_drying_recipe'] = {
             init: function() {
@@ -1131,7 +1274,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
             }
         };
-        Blockly.JavaScript['vs_drying_recipe'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_drying_recipe'] = function(block) {
+            var name = block.getFieldValue('NAME'), input = block.getFieldValue('INPUT'), output = block.getFieldValue('OUTPUT'), days = block.getFieldValue('DAYS');
+            var json = { "code": `${modConfig.modName}:drying-${name}`, "dryingDays": parseInt(days), "input": { "type": "item", "code": input }, "output": { "type": "item", "code": output } };
+            return JSON.stringify(json, null, 2) + '|||drying|||';
+        };
 
         Blockly.Blocks['vs_grinding_recipe'] = {
             init: function() {
@@ -1142,7 +1289,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(45);
             }
         };
-        Blockly.JavaScript['vs_grinding_recipe'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_grinding_recipe'] = function(block) {
+            var name = block.getFieldValue('NAME'), input = block.getFieldValue('INPUT'), output = block.getFieldValue('OUTPUT'), quantity = block.getFieldValue('QUANTITY');
+            var json = { "code": `${modConfig.modName}:grinding-${name}`, "ingredient": { "type": "item", "code": input }, "output": { "type": "item", "code": output, "quantity": parseInt(quantity) } };
+            return JSON.stringify(json, null, 2) + '|||grinding|||';
+        };
 
         // ========== SOUNDS & PARTIKEL ==========
         Blockly.Blocks['vs_custom_sound'] = {
@@ -1153,7 +1304,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
             }
         };
-        Blockly.JavaScript['vs_custom_sound'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_custom_sound'] = function(block) {
+            var name = block.getFieldValue('NAME'), volume = block.getFieldValue('VOLUME'), range = block.getFieldValue('RANGE');
+            var json = { "code": `${modConfig.modName}:sound/${name}`, "soundType": "custom", "volume": parseFloat(volume), "range": parseInt(range) };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
 
         Blockly.Blocks['vs_ambient_sound'] = {
             init: function() {
@@ -1163,7 +1318,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
             }
         };
-        Blockly.JavaScript['vs_ambient_sound'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_ambient_sound'] = function(block) {
+            var name = block.getFieldValue('NAME'), sound = block.getFieldValue('SOUND'), interval = block.getFieldValue('INTERVAL');
+            var json = { "code": `${modConfig.modName}:ambient-${name}`, "ambientSound": sound, "intervalSeconds": parseInt(interval) };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
 
         Blockly.Blocks['vs_particle_effect'] = {
             init: function() {
@@ -1174,7 +1333,34 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
             }
         };
-        Blockly.JavaScript['vs_particle_effect'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_particle_effect'] = function(block) {
+            var name = block.getFieldValue('NAME'), type = block.getFieldValue('TYPE'), quantity = block.getFieldValue('QUANTITY'), lifetime = block.getFieldValue('LIFETIME');
+            var safeId = name.replace(/[^a-zA-Z0-9_]/g, '_');
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Client;
+using Vintagestory.API.MathTools;
+namespace ${modConfig.modName} {
+    public class ParticleEffect_${safeId} : ModSystem {
+        public override void StartClientSide(ICoreClientAPI api) {
+            // Particle effect: ${name}, type: ${type}
+        }
+        public static SimpleParticleProperties Create${safeId}Particles(Vec3d pos) {
+            var props = new SimpleParticleProperties(
+                ${parseInt(quantity)}, ${parseInt(quantity)},
+                ColorUtil.ToRgba(200, 200, 200, 200),
+                pos, pos,
+                new Vec3f(-0.5f, 0.3f, -0.5f), new Vec3f(0.5f, 1.0f, 0.5f),
+                ${parseFloat(lifetime)}f, 1f, 0.3f, 1.0f
+            );
+            props.SelfPropelled = true;
+            props.GravityEffect = 0.5f;
+            return props;
+        }
+    }
+}`;
+            return 'csharp:ParticleEffect_' + safeId + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_block_particles'] = {
             init: function() {
@@ -1184,7 +1370,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
             }
         };
-        Blockly.JavaScript['vs_block_particles'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_block_particles'] = function(block) {
+            var blockName = block.getFieldValue('BLOCK'), particle = block.getFieldValue('PARTICLE'), rate = block.getFieldValue('RATE');
+            var json = { "code": `${modConfig.modName}:${blockName}`, "class": "Block", "particleProperties": [{ "type": particle, "quantity": parseFloat(rate), "pos": "center" }], "soundStep": "none" };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
 
         Blockly.Blocks['vs_weather_particles'] = {
             init: function() {
@@ -1194,7 +1384,28 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
             }
         };
-        Blockly.JavaScript['vs_weather_particles'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_weather_particles'] = function(block) {
+            var type = block.getFieldValue('TYPE'), intensity = block.getFieldValue('INTENSITY');
+            var safeId = type.replace(/[^a-zA-Z0-9_]/g, '_');
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Client;
+namespace ${modConfig.modName} {
+    public class WeatherParticles_${safeId} : ModSystem {
+        ICoreClientAPI capi;
+        public override void StartClientSide(ICoreClientAPI api) {
+            capi = api;
+            api.Event.RegisterGameTickListener(OnTick, 50);
+        }
+        private void OnTick(float dt) {
+            if (capi.World.Player?.Entity == null) return;
+            // Weather particle type: ${type}, intensity: ${parseFloat(intensity)}
+            // Implementation: spawn ${type} particles around player
+        }
+    }
+}`;
+            return 'csharp:WeatherParticles_' + safeId + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_footstep_sound'] = {
             init: function() {
@@ -1203,7 +1414,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(195);
             }
         };
-        Blockly.JavaScript['vs_footstep_sound'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_footstep_sound'] = function(block) {
+            var blockName = block.getFieldValue('BLOCK'), sound = block.getFieldValue('SOUND');
+            var json = { "code": `${modConfig.modName}:${blockName}`, "class": "Block", "soundStep": sound, "sounds": { "walk": `game:walk/${sound}`, "run": `game:run/${sound}`, "break": `game:block/${sound}`, "place": `game:block/${sound}` } };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
 
         // ========== GUI & HUD ==========
         Blockly.Blocks['vs_custom_gui'] = {
@@ -1244,7 +1459,34 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
             }
         };
-        Blockly.JavaScript['vs_hud_element'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_hud_element'] = function(block) {
+            var name = block.getFieldValue('NAME'), x = block.getFieldValue('X'), y = block.getFieldValue('Y'), text = block.getFieldValue('TEXT');
+            var safeId = name.replace(/[^a-zA-Z0-9_]/g, '_');
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Client;
+namespace ${modConfig.modName} {
+    public class HudElement_${safeId} : HudElement {
+        public override string ToggleKeyCombinationCode => null;
+        public HudElement_${safeId}(ICoreClientAPI capi) : base(capi) { SetupHud(); }
+        private void SetupHud() {
+            ElementBounds bounds = ElementBounds.Fixed(EnumDialogArea.None, ${parseInt(x)}, ${parseInt(y)}, 200, 30);
+            SingleComposer = capi.Gui.CreateCompo("hud_${safeId}", bounds)
+                .AddStaticText("${text}", CairoFont.WhiteSmallText(), bounds).Compose();
+        }
+        public override void OnRenderGUI(float deltaTime) { base.OnRenderGUI(deltaTime); }
+    }
+    public class HudMod_${safeId} : ModSystem {
+        HudElement_${safeId} hud;
+        public override void StartClientSide(ICoreClientAPI api) {
+            hud = new HudElement_${safeId}(api);
+            api.Gui.RegisterDialog(hud);
+            hud.TryOpen();
+        }
+    }
+}`;
+            return 'csharp:HudElement_' + safeId + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_progress_bar'] = {
             init: function() {
@@ -1255,7 +1497,32 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
             }
         };
-        Blockly.JavaScript['vs_progress_bar'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_progress_bar'] = function(block) {
+            var name = block.getFieldValue('NAME'), width = block.getFieldValue('WIDTH'), height = block.getFieldValue('HEIGHT'), color = block.getFieldValue('COLOR');
+            var colorMap = { 'green': '0, 200, 0', 'red': '200, 0, 0', 'blue': '0, 100, 200', 'yellow': '200, 200, 0' };
+            var rgb = colorMap[color] || '0, 200, 0';
+            var className = 'ProgressBar_' + name;
+            var csharp = `
+using Vintagestory.API.Client;
+using Vintagestory.API.Common;
+namespace ${modConfig.modName} {
+    public class ${className} : HudElement {
+        public ${className}(ICoreClientAPI capi) : base(capi) { SetupGui(); }
+        private void SetupGui() {
+            ElementBounds barBounds = ElementBounds.Fixed(0, 0, ${width}, ${height});
+            SingleComposer = capi.Gui.CreateCompo("${name}_bar", ElementStdBounds.AutosizedMainDialog)
+                .AddDynamicCustomDraw(barBounds, (ctx, surface, bounds) => {
+                    ctx.SetSourceRGB(${rgb});
+                    ctx.Rectangle(bounds.drawX, bounds.drawY, bounds.InnerWidth, bounds.InnerHeight);
+                    ctx.Fill();
+                }, "${name}_bar")
+                .Compose();
+        }
+        public override string ToggleKeyCombinationCode => null;
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_inventory_slots'] = {
             init: function() {
@@ -1265,7 +1532,28 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
             }
         };
-        Blockly.JavaScript['vs_inventory_slots'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_inventory_slots'] = function(block) {
+            var name = block.getFieldValue('NAME'), cols = block.getFieldValue('COLS'), rows = block.getFieldValue('ROWS');
+            var slots = parseInt(cols) * parseInt(rows);
+            var className = 'Inventory_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Client;
+using Vintagestory.GameContent;
+namespace ${modConfig.modName} {
+    public class InventoryGeneric_${name} : InventoryGeneric {
+        public InventoryGeneric_${name}(ICoreAPI api) : base(${slots}, "${modConfig.modName}:${name}", api) { }
+    }
+    public class ${className}Container : BlockEntityContainer {
+        InventoryGeneric_${name} inv;
+        public override InventoryBase Inventory => inv;
+        public override string InventoryClassName => "${modConfig.modName}:${name}";
+        public ${className}Container() { inv = new InventoryGeneric_${name}(null); }
+        public override void Initialize(ICoreAPI api) { inv.LateInitialize("${modConfig.modName}:${name}-0", api); base.Initialize(api); }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_button_element'] = {
             init: function() {
@@ -1276,7 +1564,34 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
             }
         };
-        Blockly.JavaScript['vs_button_element'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_button_element'] = function(block) {
+            var name = block.getFieldValue('NAME'), text = block.getFieldValue('TEXT'), width = block.getFieldValue('WIDTH'), action = block.getFieldValue('ACTION');
+            var className = 'GuiButton_' + name;
+            var csharp = `
+using Vintagestory.API.Client;
+using Vintagestory.API.Common;
+namespace ${modConfig.modName} {
+    public class ${className} : GuiDialog {
+        public override string ToggleKeyCombinationCode => "${name}_dialog";
+        public ${className}(ICoreClientAPI capi) : base(capi) { SetupDialog(); }
+        private void SetupDialog() {
+            ElementBounds dialogBounds = ElementStdBounds.AutosizedMainDialog.WithAlignment(EnumDialogArea.CenterMiddle);
+            ElementBounds btnBounds = ElementBounds.Fixed(10, 40, ${width}, 35);
+            SingleComposer = capi.Gui.CreateCompo("${name}_dialog", dialogBounds)
+                .AddShadedDialogBG(ElementBounds.Fill.WithFixedPadding(5))
+                .AddDialogTitleBar("${name}", () => TryClose())
+                .AddButton("${text}", On${action}, btnBounds)
+                .Compose();
+        }
+        private bool On${action}() {
+            capi.ShowChatMessage("${text} geklickt!");
+            TryClose();
+            return true;
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_text_input'] = {
             init: function() {
@@ -1286,7 +1601,33 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
             }
         };
-        Blockly.JavaScript['vs_text_input'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_text_input'] = function(block) {
+            var name = block.getFieldValue('NAME'), placeholder = block.getFieldValue('PLACEHOLDER'), width = block.getFieldValue('WIDTH');
+            var className = 'GuiTextInput_' + name;
+            var csharp = `
+using Vintagestory.API.Client;
+using Vintagestory.API.Common;
+namespace ${modConfig.modName} {
+    public class ${className} : GuiDialog {
+        public override string ToggleKeyCombinationCode => "${name}_dialog";
+        public ${className}(ICoreClientAPI capi) : base(capi) { SetupDialog(); }
+        private void SetupDialog() {
+            ElementBounds dialogBounds = ElementStdBounds.AutosizedMainDialog.WithAlignment(EnumDialogArea.CenterMiddle);
+            ElementBounds inputBounds = ElementBounds.Fixed(10, 40, ${width}, 30);
+            SingleComposer = capi.Gui.CreateCompo("${name}_dialog", dialogBounds)
+                .AddShadedDialogBG(ElementBounds.Fill.WithFixedPadding(5))
+                .AddDialogTitleBar("${name}", () => TryClose())
+                .AddTextInput(inputBounds, OnTextChanged, CairoFont.WhiteSmallText(), "${name}_input")
+                .Compose();
+            SingleComposer.GetTextInput("${name}_input").SetPlaceHolderText("${placeholder}");
+        }
+        private void OnTextChanged(string text) {
+            capi.Logger.Notification("${name} Eingabe: " + text);
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_dropdown_menu'] = {
             init: function() {
@@ -1295,7 +1636,37 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
             }
         };
-        Blockly.JavaScript['vs_dropdown_menu'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_dropdown_menu'] = function(block) {
+            var name = block.getFieldValue('NAME'), options = block.getFieldValue('OPTIONS');
+            var optArray = options.split(',').map(s => s.trim()).filter(s => s);
+            var optValues = JSON.stringify(optArray);
+            var optNames = JSON.stringify(optArray);
+            var className = 'GuiDropdown_' + name;
+            var csharp = `
+using Vintagestory.API.Client;
+using Vintagestory.API.Common;
+namespace ${modConfig.modName} {
+    public class ${className} : GuiDialog {
+        public override string ToggleKeyCombinationCode => "${name}_dialog";
+        public ${className}(ICoreClientAPI capi) : base(capi) { SetupDialog(); }
+        private void SetupDialog() {
+            string[] values = ${optValues};
+            string[] names = ${optNames};
+            ElementBounds dialogBounds = ElementStdBounds.AutosizedMainDialog.WithAlignment(EnumDialogArea.CenterMiddle);
+            ElementBounds dropBounds = ElementBounds.Fixed(10, 40, 200, 30);
+            SingleComposer = capi.Gui.CreateCompo("${name}_dialog", dialogBounds)
+                .AddShadedDialogBG(ElementBounds.Fill.WithFixedPadding(5))
+                .AddDialogTitleBar("${name}", () => TryClose())
+                .AddDropDown(values, names, 0, OnSelectionChanged, dropBounds, "${name}_drop")
+                .Compose();
+        }
+        private void OnSelectionChanged(string code, bool selected) {
+            capi.ShowChatMessage("${name} gewählt: " + code);
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_tooltip'] = {
             init: function() {
@@ -1304,7 +1675,30 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(30);
             }
         };
-        Blockly.JavaScript['vs_tooltip'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_tooltip'] = function(block) {
+            var item = block.getFieldValue('ITEM'), text = block.getFieldValue('TEXT');
+            var className = 'Tooltip_' + item;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Client;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        public override void Start(ICoreAPI api) {
+            base.Start(api);
+            if (api.Side == EnumAppSide.Client) {
+                ICoreClientAPI capi = api as ICoreClientAPI;
+                capi.Event.BlockTexturesLoaded += () => {
+                    Item targetItem = capi.World.GetItem(new AssetLocation("${item}"));
+                    if (targetItem != null) {
+                        targetItem.Attributes["tooltip"] = new Vintagestory.API.Datastructures.StringAttribute("${text}");
+                    }
+                };
+            }
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         // ========== COMMANDS & EVENTS ==========
         Blockly.Blocks['vs_chat_command'] = {
@@ -1339,7 +1733,29 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
             }
         };
-        Blockly.JavaScript['vs_keybind'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_keybind'] = function(block) {
+            var name = block.getFieldValue('NAME'), key = block.getFieldValue('KEY'), desc = block.getFieldValue('DESC');
+            var className = 'Keybind_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Client;
+
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        ICoreClientAPI capi;
+        public override void StartClientSide(ICoreClientAPI api) {
+            capi = api;
+            api.Input.RegisterHotKey("${name}", "${desc}", GlKeys.${key});
+            api.Input.SetHotKeyHandler("${name}", OnKeyPressed);
+        }
+        private bool OnKeyPressed(KeyCombination comb) {
+            capi.ShowChatMessage("${desc}");
+            return true;
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_on_player_join'] = {
             init: function() {
@@ -1371,7 +1787,30 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
             }
         };
-        Blockly.JavaScript['vs_on_block_break'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_on_block_break'] = function(block) {
+            var blockCode = block.getFieldValue('BLOCK'), action = block.getFieldValue('ACTION');
+            var safeId = blockCode.replace(/[^a-zA-Z0-9_]/g, '_');
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+
+namespace ${modConfig.modName} {
+    public class BlockBreakHandler_${safeId} : ModSystem {
+        ICoreServerAPI sapi;
+        public override void StartServerSide(ICoreServerAPI api) {
+            sapi = api;
+            api.Event.BreakBlock += OnBlockBreak;
+        }
+        private void OnBlockBreak(IServerPlayer byPlayer, BlockSelection blockSel, ref float dropQuantityMultiplier, ref EnumHandling handling) {
+            if (blockSel.Block?.Code?.ToString() == "${blockCode}") {
+                byPlayer.SendMessage(0, "${action}", EnumChatType.Notification);
+                sapi.Logger.Notification("Block ${blockCode} gebrochen von " + byPlayer.PlayerName);
+            }
+        }
+    }
+}`;
+            return 'csharp:BlockBreakHandler_' + safeId + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_on_entity_death'] = {
             init: function() {
@@ -1381,7 +1820,30 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
             }
         };
-        Blockly.JavaScript['vs_on_entity_death'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_on_entity_death'] = function(block) {
+            var entityCode = block.getFieldValue('ENTITY'), action = block.getFieldValue('ACTION');
+            var safeId = entityCode.replace(/[^a-zA-Z0-9_]/g, '_');
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+
+namespace ${modConfig.modName} {
+    public class EntityDeathHandler_${safeId} : ModSystem {
+        ICoreServerAPI sapi;
+        public override void StartServerSide(ICoreServerAPI api) {
+            sapi = api;
+            api.Event.OnEntityDeath += OnEntityDeath;
+        }
+        private void OnEntityDeath(Entity entity, DamageSource dmgSource) {
+            if (entity?.Code?.ToString() == "${entityCode}") {
+                sapi.BroadcastMessageToAllGroups("${action}", EnumChatType.Notification);
+                sapi.Logger.Notification("Entity ${entityCode} gestorben.");
+            }
+        }
+    }
+}`;
+            return 'csharp:EntityDeathHandler_' + safeId + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_on_item_use'] = {
             init: function() {
@@ -1391,7 +1853,34 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
             }
         };
-        Blockly.JavaScript['vs_on_item_use'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_on_item_use'] = function(block) {
+            var itemCode = block.getFieldValue('ITEM'), action = block.getFieldValue('ACTION');
+            var safeId = itemCode.replace(/[^a-zA-Z0-9_]/g, '_');
+            var className = 'ItemUseHandler_' + safeId;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        ICoreServerAPI sapi;
+        public override void StartServerSide(ICoreServerAPI api) {
+            sapi = api;
+            api.Event.RegisterGameTickListener(CheckItemUse, 500);
+        }
+        private void CheckItemUse(float dt) {
+            foreach (IServerPlayer player in sapi.World.AllPlayers) {
+                ItemSlot slot = player.InventoryManager?.ActiveHotbarSlot;
+                if (slot?.Itemstack?.Collectible?.Code?.ToString() == "${itemCode}") {
+                    if (player.Entity.Controls.HandUse == EnumHandInteract.HeldItemInteract) {
+                        player.SendMessage(0, "${action}", EnumChatType.Notification);
+                    }
+                }
+            }
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_timer_event'] = {
             init: function() {
@@ -1401,7 +1890,27 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
             }
         };
-        Blockly.JavaScript['vs_timer_event'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_timer_event'] = function(block) {
+            var name = block.getFieldValue('NAME'), interval = block.getFieldValue('INTERVAL'), action = block.getFieldValue('ACTION');
+            var className = 'TimerEvent_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        ICoreServerAPI sapi;
+        public override void StartServerSide(ICoreServerAPI api) {
+            sapi = api;
+            api.Event.RegisterGameTickListener(OnTick, ${interval});
+        }
+        private void OnTick(float dt) {
+            sapi.BroadcastMessageToAllGroups("${action}", EnumChatType.Notification);
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_world_tick'] = {
             init: function() {
@@ -1410,7 +1919,25 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(210);
             }
         };
-        Blockly.JavaScript['vs_world_tick'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_world_tick'] = function(block) {
+            var name = block.getFieldValue('NAME'), frequency = block.getFieldValue('FREQUENCY');
+            var className = 'WorldTick_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        public override void Start(ICoreAPI api) {
+            base.Start(api);
+            api.Event.RegisterGameTickListener(OnTick, ${parseInt(frequency) * 25});
+        }
+        private void OnTick(float dt) {
+            // World tick handler: ${name}
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         // ========== MECHANIKEN & SYSTEME ==========
         Blockly.Blocks['vs_temperature_system'] = {
@@ -1423,7 +1950,33 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_temperature_system'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_temperature_system'] = function(block) {
+            var name = block.getFieldValue('NAME'), min = block.getFieldValue('MIN'), max = block.getFieldValue('MAX'), coldDmg = block.getFieldValue('COLD_DAMAGE'), heatDmg = block.getFieldValue('HEAT_DAMAGE');
+            var className = 'TempSystem_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        ICoreServerAPI sapi;
+        public override void StartServerSide(ICoreServerAPI api) {
+            sapi = api;
+            api.Event.RegisterGameTickListener(CheckTemperature, 2000);
+        }
+        private void CheckTemperature(float dt) {
+            foreach (IServerPlayer player in sapi.World.AllPlayers) {
+                float temp = player.Entity.World.BlockAccessor.GetClimateAt(player.Entity.Pos.AsBlockPos).Temperature;
+                if (temp < ${min}) {
+                    player.Entity.ReceiveDamage(new DamageSource { Type = EnumDamageType.Frost }, ${coldDmg}f);
+                } else if (temp > ${max}) {
+                    player.Entity.ReceiveDamage(new DamageSource { Type = EnumDamageType.Fire }, ${heatDmg}f);
+                }
+            }
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_nutrition_type'] = {
             init: function() {
@@ -1433,7 +1986,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_nutrition_type'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_nutrition_type'] = function(block) {
+            var name = block.getFieldValue('NAME'), category = block.getFieldValue('CATEGORY'), saturation = block.getFieldValue('SATURATION');
+            var json = { "code": `${modConfig.modName}:food-${name}`, "class": "Item", "maxstacksize": 8, "nutritionProps": { "foodCategory": category, "saturation": parseFloat(saturation), "health": 0 }, "creativeinventory": { "food": ["*"] }, "texture": { "base": "game:item/food/bread-rye" } };
+            return JSON.stringify(json, null, 2) + '|||item|||';
+        };
 
         Blockly.Blocks['vs_skill_system'] = {
             init: function() {
@@ -1443,7 +2000,31 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_skill_system'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_skill_system'] = function(block) {
+            var name = block.getFieldValue('NAME'), maxLevel = block.getFieldValue('MAX_LEVEL'), xpPerLevel = block.getFieldValue('XP_PER_LEVEL');
+            var className = 'SkillSystem_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Datastructures;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        public const int MaxLevel = ${maxLevel};
+        public const float XpPerLevel = ${xpPerLevel}f;
+        ICoreAPI api;
+        public override void Start(ICoreAPI api) { this.api = api; api.Logger.Notification("Skill ${name} initialisiert (Max: ${maxLevel}, XP/Level: ${xpPerLevel})"); }
+        public int GetLevel(IPlayer player) {
+            float xp = player.Entity.WatchedAttributes.GetFloat("${modConfig.modName}_${name}_xp", 0);
+            return (int)Math.Min(MaxLevel, xp / XpPerLevel);
+        }
+        public void AddXp(IPlayer player, float amount) {
+            float xp = player.Entity.WatchedAttributes.GetFloat("${modConfig.modName}_${name}_xp", 0) + amount;
+            player.Entity.WatchedAttributes.SetFloat("${modConfig.modName}_${name}_xp", xp);
+            player.Entity.WatchedAttributes.MarkPathDirty("${modConfig.modName}_${name}_xp");
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_experience_gain'] = {
             init: function() {
@@ -1453,7 +2034,34 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_experience_gain'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_experience_gain'] = function(block) {
+            var name = block.getFieldValue('NAME'), action = block.getFieldValue('ACTION'), amount = block.getFieldValue('AMOUNT');
+            var className = 'XpGain_' + name;
+            var actionMap = { 'mine': 'BreakBlock', 'kill': 'OnEntityDeath', 'craft': 'GridRecipeCrafted', 'explore': 'ChunkColumnLoaded' };
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        ICoreServerAPI sapi;
+        public override void StartServerSide(ICoreServerAPI api) {
+            sapi = api;
+            ${ action === 'mine' ? `api.Event.BreakBlock += (player, sel, ref float mult, ref EnumHandling h) => AddXp(player);` :
+               action === 'kill' ? `api.Event.OnEntityDeath += (entity, src) => { if (src?.SourceEntity is IPlayer p) AddXp(sapi.World.PlayerByUid(p.PlayerUID)); };` :
+               action === 'craft' ? `api.Event.GridRecipeCrafted += (recipe, player, output) => AddXp(player);` :
+               `api.Event.ChunkColumnLoaded += (chunkCoord, column) => { foreach(var p in sapi.World.AllPlayers) AddXp(p); };`
+            }
+        }
+        private void AddXp(IPlayer player) {
+            if (player == null) return;
+            float xp = player.Entity.WatchedAttributes.GetFloat("${modConfig.modName}_${name}_xp", 0) + ${amount}f;
+            player.Entity.WatchedAttributes.SetFloat("${modConfig.modName}_${name}_xp", xp);
+            player.Entity.WatchedAttributes.MarkPathDirty("${modConfig.modName}_${name}_xp");
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_status_effect'] = {
             init: function() {
@@ -1464,7 +2072,33 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_status_effect'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_status_effect'] = function(block) {
+            var name = block.getFieldValue('NAME'), type = block.getFieldValue('TYPE'), duration = block.getFieldValue('DURATION'), strength = block.getFieldValue('STRENGTH');
+            var className = 'StatusEffect_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        ICoreServerAPI sapi;
+        public override void StartServerSide(ICoreServerAPI api) { sapi = api; }
+        public void Apply(IPlayer player) {
+            player.Entity.WatchedAttributes.SetFloat("${modConfig.modName}_effect_${name}", ${strength}f);
+            player.Entity.WatchedAttributes.SetDouble("${modConfig.modName}_effect_${name}_until", sapi.World.Calendar.TotalHours + ${duration} / 3600.0);
+            player.Entity.WatchedAttributes.MarkPathDirty("${modConfig.modName}_effect_${name}");
+            ${ type === 'buff'
+                ? `player.Entity.Stats.Set("${modConfig.modName}_${name}", "walkspeed", ${strength} * 0.1f, true);`
+                : `player.Entity.ReceiveDamage(new DamageSource { Type = EnumDamageType.Poison }, ${strength} * 0.5f);`
+            }
+        }
+        public void Remove(IPlayer player) {
+            player.Entity.WatchedAttributes.RemoveAttribute("${modConfig.modName}_effect_${name}");
+            player.Entity.Stats.Remove("${modConfig.modName}_${name}", "walkspeed");
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_damage_type'] = {
             init: function() {
@@ -1474,7 +2108,25 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_damage_type'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_damage_type'] = function(block) {
+            var name = block.getFieldValue('NAME'), type = block.getFieldValue('TYPE'), damage = block.getFieldValue('DAMAGE');
+            var enumMap = { 'physical': 'BluntAttack', 'fire': 'Fire', 'frost': 'Frost', 'poison': 'Poison', 'magic': 'Electricity', 'fall': 'Falling' };
+            var className = 'DamageType_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        public static void Apply(Entity target, float multiplier = 1f) {
+            target.ReceiveDamage(new DamageSource {
+                Type = EnumDamageType.${enumMap[type] || 'BluntAttack'},
+                SourceEntity = null
+            }, ${damage}f * multiplier);
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_repair_system'] = {
             init: function() {
@@ -1485,7 +2137,34 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_repair_system'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_repair_system'] = function(block) {
+            var name = block.getFieldValue('NAME'), item = block.getFieldValue('ITEM'), material = block.getFieldValue('MATERIAL'), repairPct = block.getFieldValue('REPAIR_PERCENT');
+            var className = 'RepairSystem_' + name;
+            var csharp = `
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+namespace ${modConfig.modName} {
+    public class ${className} : ModSystem {
+        public override void StartServerSide(ICoreServerAPI api) {
+            api.Event.PlayerInteractEntity += (entity, player, slot, hitPos, mode, ref EnumHandling handling) => {
+                if (slot?.Itemstack?.Collectible?.Code?.ToString() == "${material}") {
+                    IServerPlayer serverPlayer = player as IServerPlayer;
+                    ItemSlot offhand = serverPlayer?.InventoryManager?.GetHotbarInventory()?[9];
+                    if (offhand?.Itemstack?.Collectible?.Code?.ToString() == "${item}") {
+                        int maxDur = offhand.Itemstack.Collectible.GetMaxDurability(offhand.Itemstack);
+                        int curDur = offhand.Itemstack.Attributes.GetInt("durability", maxDur);
+                        int repair = (int)(maxDur * ${repairPct}f / 100f);
+                        offhand.Itemstack.Attributes.SetInt("durability", Math.Min(maxDur, curDur + repair));
+                        slot.TakeOut(1);
+                        serverPlayer.SendMessage(0, "Repariert: ${item} um ${repairPct}%", EnumChatType.Notification);
+                    }
+                }
+            };
+        }
+    }
+}`;
+            return 'csharp:' + className + ':' + csharp + '|||';
+        };
 
         Blockly.Blocks['vs_decay_system'] = {
             init: function() {
@@ -1496,7 +2175,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(270);
             }
         };
-        Blockly.JavaScript['vs_decay_system'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_decay_system'] = function(block) {
+            var name = block.getFieldValue('NAME'), item = block.getFieldValue('ITEM'), days = block.getFieldValue('DAYS'), result = block.getFieldValue('RESULT');
+            var json = { "code": `${modConfig.modName}:decay-${name}`, "inputCode": item, "outputCode": result, "decayDays": parseInt(days), "transitionType": "Decay", "whenRotten": { "type": "item", "code": result } };
+            return JSON.stringify(json, null, 2) + '|||decayconfig|||';
+        };
 
         // ========== ERWEITERTE BLÖCKE ==========
         Blockly.Blocks['vs_liquid_block'] = {
@@ -1538,7 +2221,11 @@ namespace ${modConfig.modName} {
                 this.setPreviousStatement(true, null); this.setNextStatement(true, null); this.setColour(120);
             }
         };
-        Blockly.JavaScript['vs_crop_block'] = function(block) { return ''; };
+        Blockly.JavaScript['vs_crop_block'] = function(block) {
+            var name = block.getFieldValue('NAME'), texture = block.getFieldValue('TEXTURE'), yield_item = block.getFieldValue('YIELD'), yield_amount = block.getFieldValue('YIELD_AMOUNT');
+            var json = { "code": `${modConfig.modName}:${name}-stage{stage}`, "class": "BlockCrop", "variantGroups": [{ "code": "stage", "states": ["1","2","3","4","5","6","7","8"] }], "drops": [{ "type": "item", "code": yield_item, "quantity": { "avg": parseInt(yield_amount), "var": 1 } }], "texture": { "base": texture !== "none" ? `block/${path.basename(texture, '.png')}` : "game:block/soil/farmland-dry" } };
+            return JSON.stringify(json, null, 2) + '|||';
+        };
 
         Blockly.Blocks['vs_door_block'] = {
             init: function() {
@@ -1793,18 +2480,18 @@ namespace ${modConfig.modName} {
     }
 
     function generateMod() {
-        if (!/^[a-zA-Z0-9-_]+$/.test(modConfig.modName)) {
-            throw new Error("Ungültiger Mod-Name: Nur Buchstaben, Zahlen, Bindestriche und Unterstriche sind erlaubt.");
-        }
-
         const logFilePath = path.join(__dirname, `${sanitizeFileName(modConfig.modName)}_creation.log`);
-        fs.writeFileSync(logFilePath, '', 'utf8');
-
         let outputText = '';
         let blockClassMap = {};
         let behaviorMap = {};
 
         try {
+            if (!/^[a-zA-Z0-9-_]+$/.test(modConfig.modName)) {
+                throw new Error("Ungültiger Mod-Name: Nur Buchstaben, Zahlen, Bindestriche und Unterstriche sind erlaubt.");
+            }
+
+            try { fs.writeFileSync(logFilePath, '', 'utf8'); } catch (e) { /* non-critical */ }
+
             outputText += `Aktuelles Arbeitsverzeichnis: ${process.cwd()}\n`;
             const prereqCheck = checkPrerequisites();
             outputText += prereqCheck.message;
@@ -1871,20 +2558,25 @@ namespace ${modConfig.modName} {
 
             items.forEach((item, index) => {
                 if (item.startsWith('json:')) {
-                    const behaviorJson = JSON.parse(item.replace('json:', ''));
-                    const behaviorName = behaviorJson.name.split('.').pop().substring(8);
-                    if (blockClassMap[behaviorName]) {
-                        behaviors.push(behaviorJson);
-                        behaviorMap[behaviorName] = true;
-                        outputText += `Verhalten ${behaviorName} wird Block ${behaviorName} zugewiesen.\n`;
-                    } else {
-                        outputText += `Verhalten ${behaviorName} hat keinen passenden Block und wird ignoriert.\n`;
+                    try {
+                        const behaviorJson = JSON.parse(item.substring(5));
+                        const behaviorName = behaviorJson.name.split('.').pop().substring(8);
+                        if (blockClassMap[behaviorName]) {
+                            behaviors.push(behaviorJson);
+                            behaviorMap[behaviorName] = true;
+                            outputText += `Verhalten ${behaviorName} wird Block ${behaviorName} zugewiesen.\n`;
+                        } else {
+                            outputText += `Verhalten ${behaviorName} hat keinen passenden Block und wird ignoriert.\n`;
+                        }
+                    } catch (e) {
+                        outputText += `Warnung: Ungültiges Behavior-JSON übersprungen: ${e.message}\n`;
                     }
                 }
             });
 
             items.forEach((item, index) => {
                 if (item.startsWith('json:')) {
+                    // handled in behavior pass above
                 } else if (item.startsWith('csharp:')) {
                     hasCSharp = true;
                     const parts = item.split(':');
@@ -1895,38 +2587,125 @@ namespace ${modConfig.modName} {
                     outputText += `C#-Datei erstellt: src/${sanitizeFileName(name)}.cs\n`;
                     outputText += `Inhalt von src/${sanitizeFileName(name)}.cs:\n${csharpCode}\n\n`;
                 } else {
-                    const json = JSON.parse(item.trim());
-                    if (json.class && (json.class.startsWith(`${modConfig.modName}.Block`) || json.class === "Block")) {
+                    let json;
+                    try {
+                        json = JSON.parse(item.trim());
+                    } catch (e) {
+                        outputText += `Info: Nicht-JSON Token übersprungen: "${item.trim().substring(0, 30)}"\n`;
+                        return;
+                    }
+                    if (!json || typeof json !== 'object') return;
+                    const cls = json.class || '';
+                    const isBlock = cls.startsWith(`${modConfig.modName}.Block`) || cls === 'Block' || (cls.startsWith('Block') && cls.length > 5);
+                    const isItem = !isBlock && (cls === 'Item' || cls.startsWith('Item'));
+                    const isEntity = !isBlock && !isItem && (json.hitboxSize !== undefined || json.server !== undefined);
+
+                    if (isBlock) {
                         fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/blocktypes`), { recursive: true });
-                        const blockNameFromClass = json.class.split('.').length > 1 ? json.class.split('.')[1].substring(5) : json.code.split(':')[1];
+                        const blockNameFromClass = cls.split('.').length > 1 ? cls.split('.')[1].substring(5) : (json.code ? json.code.split(':')[1] : 'block');
                         if (behaviors.length > 0) {
                             outputText += `Prüfe Verhalten für Block ${blockNameFromClass}:\n`;
-                            outputText += `Verfügbare Verhalten: ${JSON.stringify(behaviors, null, 2)}\n`;
-                            json.behaviors = behaviors.filter(b => {
+                            json.behaviors = (json.behaviors || []).concat(behaviors.filter(b => {
                                 const behaviorBlockName = b.name.split('.').pop().substring(8);
-                                outputText += `Vergleiche: ${behaviorBlockName} mit ${blockNameFromClass}\n`;
                                 return behaviorBlockName === blockNameFromClass;
-                            });
+                            }));
                             outputText += `Zugewiesene Verhalten: ${JSON.stringify(json.behaviors, null, 2)}\n`;
                         }
-                        const blockFilePath = path.join(tempDir, `assets/${modConfig.modName}/blocktypes`, `${sanitizeFileName(json.code.split(':')[1])}.json`);
-                        fs.writeFileSync(blockFilePath, JSON.stringify(json, null, 2));
-                        outputText += `Block-Datei erstellt: assets/${modConfig.modName}/blocktypes/${sanitizeFileName(json.code.split(':')[1])}.json\n`;
-                    } else if (json.ingredientPattern) {
-                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes`), { recursive: true });
-                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes`, `${sanitizeFileName(json.output.code.split(':')[1])}_recipe.json`), JSON.stringify(json, null, 2));
-                        outputText += `Rezept-Datei erstellt: assets/${modConfig.modName}/recipes/${sanitizeFileName(json.output.code.split(':')[1])}_recipe.json\n`;
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'block';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/blocktypes`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Block-Datei erstellt: assets/${modConfig.modName}/blocktypes/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (isItem) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/itemtypes`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'item';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/itemtypes`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Item-Datei erstellt: assets/${modConfig.modName}/itemtypes/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (isEntity) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/entities`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'entity';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/entities`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Entity-Datei erstellt: assets/${modConfig.modName}/entities/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.ingredientPattern !== undefined) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/grid`), { recursive: true });
+                        const recipeCode = json.output && json.output.code ? sanitizeFileName(json.output.code.split(':')[1] || json.output.code) : 'recipe';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/grid`, `${recipeCode}_recipe.json`), JSON.stringify(json, null, 2));
+                        outputText += `Rezept-Datei erstellt: assets/${modConfig.modName}/recipes/grid/${recipeCode}_recipe.json\n`;
+                    } else if (json.sealHours !== undefined) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/barrel`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'barrel';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/barrel`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Fass-Rezept erstellt: assets/${modConfig.modName}/recipes/barrel/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.clayRequired !== undefined) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/clayforming`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'clay';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/clayforming`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Tonform-Rezept erstellt: assets/${modConfig.modName}/recipes/clayforming/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.ingredient !== undefined && json.output !== undefined && json.code && json.code.includes('smithing')) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/smithing`), { recursive: true });
+                        const codePart = json.code.split(':')[1] || json.code;
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/smithing`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Schmied-Rezept erstellt: assets/${modConfig.modName}/recipes/smithing/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.ingredient !== undefined && json.output !== undefined && json.code && json.code.includes('grinding')) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/quernstone`), { recursive: true });
+                        const codePart = json.code.split(':')[1] || json.code;
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/quernstone`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Mahlstein-Rezept erstellt: assets/${modConfig.modName}/recipes/quernstone/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.ingredient !== undefined && json.output !== undefined) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/knapping`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'knapping';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/knapping`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Steinbearbeitungs-Rezept erstellt: assets/${modConfig.modName}/recipes/knapping/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.cookingTime !== undefined && Array.isArray(json.ingredients)) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/cooking`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'cooking';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/cooking`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Koch-Rezept erstellt: assets/${modConfig.modName}/recipes/cooking/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (Array.isArray(json.ingredients) && json.output !== undefined) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/alloy`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'alloy';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/alloy`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Legierungs-Rezept erstellt: assets/${modConfig.modName}/recipes/alloy/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.dryingDays !== undefined) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/drying`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'drying';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/recipes/drying`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Trocknungs-Rezept erstellt: assets/${modConfig.modName}/recipes/drying/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.deposits !== undefined) {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/worldgen/deposits`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'deposit';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/worldgen/deposits`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Weltgen-Deposit erstellt: assets/${modConfig.modName}/worldgen/deposits/${sanitizeFileName(codePart)}.json\n`;
+                    } else if (json.generator === 'treegen') {
+                        fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/worldgen/treegen`), { recursive: true });
+                        const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'tree';
+                        fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/worldgen/treegen`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                        outputText += `Baumtyp erstellt: assets/${modConfig.modName}/worldgen/treegen/${sanitizeFileName(codePart)}.json\n`;
+                    } else {
+                        if (json.decayDays !== undefined) {
+                            fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/config`), { recursive: true });
+                            const codePart = json.code ? (json.code.split(':')[1] || json.code) : 'decay';
+                            fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/config`, `${sanitizeFileName(codePart)}.json`), JSON.stringify(json, null, 2));
+                            outputText += `Decay-Config erstellt: assets/${modConfig.modName}/config/${sanitizeFileName(codePart)}.json\n`;
+                        } else {
+                            fs.mkdirSync(path.join(tempDir, `assets/${modConfig.modName}/misc`), { recursive: true });
+                            const codePart = json.code ? sanitizeFileName(json.code.split(':')[1] || json.code) : `element_${index}`;
+                            fs.writeFileSync(path.join(tempDir, `assets/${modConfig.modName}/misc`, `${codePart}.json`), JSON.stringify(json, null, 2));
+                            outputText += `Misc JSON gespeichert: assets/${modConfig.modName}/misc/${codePart}.json (class: "${cls}")\n`;
+                        }
                     }
                 }
             });
 
             if (textureList.length > 0) {
-                const textureDir = path.join(tempDir, `assets/${modConfig.modName}/textures/block`);
-                fs.mkdirSync(textureDir, { recursive: true });
+                const blockTextureDir = path.join(tempDir, `assets/${modConfig.modName}/textures/block`);
+                const itemTextureDir = path.join(tempDir, `assets/${modConfig.modName}/textures/item`);
+                fs.mkdirSync(blockTextureDir, { recursive: true });
+                fs.mkdirSync(itemTextureDir, { recursive: true });
                 textureList.forEach(texture => {
-                    const textureFile = path.join(textureDir, path.basename(texture));
-                    fs.copyFileSync(texture, textureFile);
-                    outputText += `Textur kopiert: assets/${modConfig.modName}/textures/block/${path.basename(texture)}\n`;
+                    const texName = path.basename(texture);
+                    fs.copyFileSync(texture, path.join(blockTextureDir, texName));
+                    fs.copyFileSync(texture, path.join(itemTextureDir, texName));
+                    outputText += `Textur kopiert: assets/${modConfig.modName}/textures/block/${texName}\n`;
+                    outputText += `Textur kopiert: assets/${modConfig.modName}/textures/item/${texName}\n`;
                 });
             }
 
