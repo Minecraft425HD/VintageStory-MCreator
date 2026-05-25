@@ -132,13 +132,29 @@
     </div>
 
     <script>
-    const fs = require('fs');
-    const path = require('path');
-    const { ipcRenderer } = require('electron');
-    const remote = require('@electron/remote');
-    const dialog = remote.dialog;
-    const AdmZip = require('adm-zip');
-    const { execSync } = require('child_process');
+    // Global error handler — catches crashes before the try block
+    window.onerror = function(msg, src, line, col, err) {
+        const text = `Renderer-Fehler: ${msg}\nDatei: ${src} Zeile ${line}\n${err ? err.stack : ''}`;
+        const out = document.getElementById('output');
+        if (out) out.innerText = text;
+        else document.body.innerText = text;
+        return false;
+    };
+
+    let fs, path, ipcRenderer, remote, dialog, AdmZip, execSync;
+    try {
+        fs = require('fs');
+        path = require('path');
+        ({ ipcRenderer } = require('electron'));
+        remote = require('@electron/remote');
+        dialog = remote.dialog;
+        AdmZip = require('adm-zip');
+        ({ execSync } = require('child_process'));
+    } catch (requireErr) {
+        document.body.style.cssText = 'background:#1e272e;color:#e74c3c;font-size:1.2rem;padding:30px;font-family:monospace';
+        document.body.innerText = `STARTFEHLER: ${requireErr.message}\n\nBitte "npm install" im Projektordner ausführen!`;
+        throw requireErr;
+    }
 
     let selectedTexturePath = null;
     let textureList = [];

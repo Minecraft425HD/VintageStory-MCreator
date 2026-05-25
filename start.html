@@ -136,9 +136,22 @@
     </div>
 
     <script>
-        const { ipcRenderer } = require('electron');
-        const fs = require('fs');
-        const path = require('path');
+        window.onerror = function(msg, src, line, col, err) {
+            document.body.style.cssText = 'background:#1e272e;color:#e74c3c;font-size:1.1rem;padding:20px;font-family:monospace';
+            document.body.innerText = `STARTFEHLER: ${msg}\nDatei: ${src} Zeile ${line}\n${err ? err.stack : ''}`;
+            return false;
+        };
+
+        let ipcRenderer, fs, path;
+        try {
+            ({ ipcRenderer } = require('electron'));
+            fs = require('fs');
+            path = require('path');
+        } catch (requireErr) {
+            document.body.style.cssText = 'background:#1e272e;color:#e74c3c;font-size:1.1rem;padding:20px;font-family:monospace';
+            document.body.innerText = `STARTFEHLER: ${requireErr.message}\n\nBitte "npm install" im Projektordner ausführen!`;
+            throw requireErr;
+        }
 
         const historyFile = path.join(__dirname, 'history.json');
 
